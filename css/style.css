@@ -1,0 +1,93 @@
+/** =generic **/
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.color-blue-cambium {
+    color: #003D79 !important;
+}
+
+.bg-blue-cambium {
+    background-color: #003D79 !important;
+}
+
+.bg-blue-light, td.bg-blue-light {
+    background-color: rgba(0, 152, 255, 0.15) !important;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.cge-real-time-throughput {
+    font-weight: bold;
+}
+
+.cge-inOctetsColor {
+    color: #2E7D32;
+}
+
+.cge-outOctetsColor {
+    color: #B71C1C;
+}
+
+/** =apevaluation **/
+
+.cge-ap-evaluation-entry-title {
+    font-size: 16px;
+    margin-bottom: 5px;
+    margin-left: 2px;
+}
+
+.cge-ap-evaluation-entry-table {
+    width: 100%;
+}
+
+.cge-good-power-level {
+    color: #4CAF50;
+}
+
+.cge-decent-power-level {
+    color: #F9A825;
+}
+
+.cge-bad-power-level {
+    color: #B71C1C;
+}
+
+/** =popup **/
+#cge_form_settings {
+    width: 250px;
+}
+
+/** =tooltip **/
+.cge-tooltip {
+    display: none;
+    content: " ";
+    padding:10px;
+    border-radius: 2px 2px 2px 2px;
+    position: absolute;
+    background: #333;
+    background: rgba(0,0,0,.8);
+    color: #fff;
+    white-space: pre-wrap;
+    width: 300px;
+}
+
+.cge-tooltip::before {
+    content:'';
+    display:block;
+    width:0;
+    height:0;
+    position:absolute;
+
+    border-left: 8px solid transparent;
+    border-right:8px solid transparent;
+    border-top: 8px solid black;
+    left:145px;
+
+    bottom:-7px;
+}
