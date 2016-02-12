@@ -65,6 +65,14 @@ div#page {
 }
 
 /** =tables **/
+
+#SectionNatPublicArpTable table > tbody > tr > td,
+#SectionNatPrivateArpTable table > tbody > tr > td,
+#SectionRFPublicArpTable table > tbody > tr > td,
+#SectionNATTable table > tbody > tr > td {
+    text-align: center;
+}
+
 .datatable.table-autosort {
     width: 100%;
 }

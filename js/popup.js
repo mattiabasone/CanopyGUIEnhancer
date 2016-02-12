@@ -1,6 +1,6 @@
 window.onload = function() {
 
-    var formFields = ['cge_enabled', 'cge_custom_css'];
+    var formFields = ['cge_enabled', 'cge_custom_css', 'cge_ip_lookup', 'cge_mac_lookup'];
 
     var formSettings = document.forms.cge_form_settings;
 
@@ -13,6 +13,12 @@ window.onload = function() {
             }
             if (data.cge_custom_css === 1) {
                 document.getElementById('cge_custom_css').checked = true;
+            }
+            if (data.cge_ip_lookup === 1) {
+                document.getElementById('cge_ip_lookup').checked = true;
+            }
+            if (data.cge_mac_lookup === 1) {
+                document.getElementById('cge_mac_lookup').checked = true;
             }
         }
     });

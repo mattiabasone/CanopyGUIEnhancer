@@ -133,13 +133,18 @@ CanopyEnhancer.prototype.initialize = function() {
             if (chrome.runtime.lastError || !data.hasOwnProperty('cge_custom_css')) {
                 _this.settings = {
                     cge_enabled: 1,
-                    cge_custom_css: 1
+                    cge_custom_css: 1,
+                    cge_ip_lookup: 1,
+                    cge_mac_lookup: 1
                 };
                 chrome.storage.local.set(_this.settings);
             } else {
                 _this.settings = data;
             }
-
+            if (_this.debug === true) {
+                console.log("Loaded settings:");
+                console.log(_this.settings);
+            }
             if (_this.settings.cge_enabled === 1) {
 
                 if (_this.debug === true) {
@@ -291,13 +296,13 @@ CanopyEnhancer.prototype.realTimeTraffic = function() {
 
         var el = document.createElement("span");
         el.id = 'cge-CurrInTraffic-wrap';
-        el.className = 'cge-real-time-throughput color-blue-cambium';
+        el.className = 'cge-real-time-throughput cge-color-blue-cambium';
         el.innerHTML = ' (<span id="cge-CurrInTraffic">0.00</span> Mbps)</span>';
         inTrafficBlock.parentNode.insertBefore(el, inTrafficBlock.nextSibling);
 
         el = document.createElement("span");
         el.id = 'cge-CurrOutTraffic-wrap';
-        el.className = 'cge-real-time-throughput color-blue-cambium';
+        el.className = 'cge-real-time-throughput cge-color-blue-cambium';
         el.innerHTML = ' (<span id="cge-CurrOutTraffic">0.00</span> Mbps)';
         outTrafficBlock.parentNode.insertBefore(el, outTrafficBlock.nextSibling);
 
@@ -479,7 +484,7 @@ CanopyEnhancer.prototype.renderBetterEvaluationTemplate = function() {
                     break;
                 case 'ESN':
                 case 'Color Code':
-                    evaluationContent += '<td class="bg-blue-light">'+prop+': '+evalEntry[prop]+'</td>';
+                    evaluationContent += '<td class="cge-bg-blue-light">'+prop+': '+evalEntry[prop]+'</td>';
                     break;
                 default:
                     evaluationContent += '<td>'+prop+': '+evalEntry[prop]+'</td>';
@@ -528,13 +533,14 @@ CanopyEnhancer.prototype.betterEvaluation = function() {
 
 /**
  * MAC LookUp API
- * @param macaddress
  * @param block
  * @constructor
  */
-CanopyEnhancer.prototype.MACLookUp = function(macaddress, block) {
+CanopyEnhancer.prototype.MACLookUp = function(block) {
     var _this = this;
     var blockRect = block.getBoundingClientRect();
+    var macaddress = block.innerText.trimBlank();
+    block.classList.add('cge-highlight');
 
     if (macaddress.isMAC()) {
         var request = new XMLHttpRequest();
@@ -563,16 +569,57 @@ CanopyEnhancer.prototype.MACLookUp = function(macaddress, block) {
             _this.tooltipMACNode.style.display = 'block';
             var tooltipRect = _this.tooltipMACNode.getBoundingClientRect();
             _this.tooltipMACNode.style.top = ( (blockRect.top + document.body.scrollTop) - (tooltipRect.height) - 5) + "px";
-            _this.tooltipMACNode.style.left = (blockRect.left - (blockRect.width / 2))+ "px";
+            _this.tooltipMACNode.style.left = (blockRect.left - (blockRect.width / 2) + (tooltipRect.width / 2))+ "px";
         };
         request.onerror = function () {};
 
         request.send();
+    } else {
+        _this.tooltipMACNode.style.display = 'none';
+        block.classList.remove('cge-highlight');
+
     }
 };
 
 /**
- * Add special tags to all MAC Addresses
+ * Initialize listeners
+ */
+CanopyEnhancer.prototype.addMACLookUpListener = function(querySelector) {
+    querySelector = typeof querySelector !== 'undefined' ? querySelector : 'body';
+    var _this = this;
+
+    document.querySelector(querySelector).addEventListener('mouseover', function(event) {
+        _this.MACLookUp(event.target);
+    });
+
+    document.querySelector(querySelector).addEventListener('mouseout', function(event) {
+        event.target.classList.remove('cge-highlight');
+        _this.tooltipMACNode.style.display = 'none';
+    });
+
+    document.querySelector(querySelector).addEventListener('click', function(event) {
+        _this.MACLookUp(event.target);
+    });
+};
+
+/**
+ * ARP Page processing
+ */
+CanopyEnhancer.prototype.ARPPageMacLookup = function() {
+    if (this.currentCatIndex == 2 && this.currentPageIndex == 20 && this.settings.cge_mac_lookup == 1) {
+
+        // Tooltip
+        this.tooltipMACNode = document.createElement('div');
+        this.tooltipMACNode.id = 'cge-mac-lookup-tooltip';
+        this.tooltipMACNode.className = 'cge-tooltip';
+        document.getElementsByTagName("body")[0].appendChild(this.tooltipMACNode);
+
+        this.addMACLookUpListener('#page');
+    }
+};
+
+/**
+ * Add special tags to all MAC Addresses (not used)
  *
  * @param block_id
  */
@@ -610,77 +657,6 @@ CanopyEnhancer.prototype.addTagToMACAddresses = function(block_id) {
     document.getElementById(block_id).innerHTML = newText;
 };
 
-/**
- * Initialize listeners
- */
-CanopyEnhancer.prototype.addMACLookUpListener = function() {
-    var _this = this;
-
-    document.querySelector('body').addEventListener('mouseover', function(event) {
-        if (event.target.className.toLowerCase() === 'cge-lookup-mac') {
-            var mac = event.target.innerText;
-            mac = mac.trimBlank();
-            _this.MACLookUp(mac, event.target);
-        } else {
-            _this.tooltipMACNode.style.display = 'none';
-        }
-    });
-
-    document.querySelector('body').addEventListener('mouseout', function(event) {
-        if (event.target.className.toLowerCase() === 'cge-lookup-mac') {
-            _this.tooltipMACNode.style.display = 'none';
-        }
-    });
-
-    document.querySelector('body').addEventListener('click', function(event) {
-        if (event.target.className.toLowerCase() === 'cge-lookup-mac') {
-            var mac = event.target.innerText;
-            mac = mac.trimBlank();
-            _this.MACLookUp(mac, event.target);
-        } else {
-            _this.tooltipMACNode.style.display = 'none';
-        }
-    });
-};
-
-/**
- * ARP Page processing
- */
-CanopyEnhancer.prototype.ARPPageMacLookup = function() {
-    if (this.currentCatIndex == 2 && this.currentPageIndex == 20) {
-        var _this = this;
-
-        // Tooltip
-        this.tooltipMACNode = document.createElement('div');
-        this.tooltipMACNode.id = 'cge-mac-lookup-tooltip';
-        this.tooltipMACNode.className = 'cge-tooltip';
-        document.getElementsByTagName("body")[0].appendChild(this.tooltipMACNode);
-
-        this.addMACLookUpListener();
-        if (document.getElementById('NatPublicArpTable') !== null) {
-            this.addTagToMACAddresses('NatPublicArpTable');
-        }if (document.getElementById('NatPrivateArpTable') !== null) {
-            this.addTagToMACAddresses('NatPrivateArpTable');
-        }
-        if (document.getElementById('RFPublicArpTable') !== null) {
-            this.addTagToMACAddresses('RFPublicArpTable');
-        }
-        if (this.refreshTime > 0) {
-            setInterval(function () {
-                if (document.getElementById('NatPublicArpTable') !== null) {
-                    _this.addTagToMACAddresses('NatPublicArpTable');
-                }if (document.getElementById('NatPrivateArpTable') !== null) {
-                    _this.addTagToMACAddresses('NatPrivateArpTable');
-                }
-                if (document.getElementById('RFPublicArpTable') !== null) {
-                    _this.addTagToMACAddresses('RFPublicArpTable');
-                }
-            }, this.intervalsTimeout + 100);
-        }
-
-    }
-};
-
 /** ======================================================================
  *  =NAT Table
  ** ======================================================================*/
@@ -692,10 +668,11 @@ CanopyEnhancer.prototype.ARPPageMacLookup = function() {
  * @param block
  * @constructor
  */
-CanopyEnhancer.prototype.IPLookUp = function(ip, block) {
+CanopyEnhancer.prototype.IPLookUp = function(block) {
     var _this = this;
     var blockRect = block.getBoundingClientRect();
-
+    var ip = block.innerText.trimBlank();
+    block.classList.add('cge-highlight');
     if (ip.isValidPubIP()) {
         var request = new XMLHttpRequest();
         request.open('GET', 'http://ip-api.com/json/' + ip, true);
@@ -725,21 +702,58 @@ CanopyEnhancer.prototype.IPLookUp = function(ip, block) {
             _this.tooltipIPNode.style.display = 'block';
             var tooltipRect = _this.tooltipIPNode.getBoundingClientRect();
             _this.tooltipIPNode.style.top = ( (blockRect.top + document.body.scrollTop) - (tooltipRect.height) - 5) + "px";
-            _this.tooltipIPNode.style.left = (blockRect.left - (blockRect.width / 2))+ "px";
+            _this.tooltipIPNode.style.left =  (blockRect.left + (blockRect.width / 2) - (tooltipRect.width / 2))+ "px";
 
         };
         request.onerror = function () {};
-
         request.send();
+    } else {
+        block.classList.remove('cge-highlight');
+        _this.tooltipIPNode.style.display = 'none';
     }
 };
 
 /**
- * Add special tag to IP Addresses for lookup
+ * Initialize listeners
+ */
+CanopyEnhancer.prototype.addIPLookUpListener = function(querySelector) {
+    querySelector = typeof querySelector !== 'undefined' ? querySelector : 'body';
+    var _this = this;
+
+    document.querySelector(querySelector).addEventListener('mouseover', function(event) {
+        _this.IPLookUp(event.target);
+    });
+
+    document.querySelector(querySelector).addEventListener('mouseout', function(event) {
+        event.target.classList.remove('cge-highlight');
+        _this.tooltipIPNode.style.display = 'none';
+    });
+
+    document.querySelector(querySelector).addEventListener('click', function(event) {
+        _this.IPLookUp(event.target);
+    });
+};
+
+/**
+ * NAT Table
+ */
+CanopyEnhancer.prototype.NATTable = function() {
+    if (this.currentCatIndex == 5 && this.currentPageIndex == 9 && this.settings.cge_ip_lookup == 1) {
+        // Tooltip
+        this.tooltipIPNode = document.createElement('div');
+        this.tooltipIPNode.id = 'cge-ip-lookup-tooltip';
+        this.tooltipIPNode.className = 'cge-tooltip';
+        document.getElementsByTagName("body")[0].appendChild(this.tooltipIPNode);
+        // Listeners
+        this.addIPLookUpListener('#page');
+    }
+};
+
+/**
+ * Add special tag to IP Addresses for lookup (not used)
  * @param block_id
  */
 CanopyEnhancer.prototype.addTagToIPAddresses = function(block_id) {
-
     var innerText = document.getElementById(block_id).innerHTML;
     var newText = "";
     var i = -1;
@@ -770,61 +784,4 @@ CanopyEnhancer.prototype.addTagToIPAddresses = function(block_id) {
         }
     }
     document.getElementById(block_id).innerHTML = newText;
-};
-
-/**
- * Initialize listeners
- */
-CanopyEnhancer.prototype.addIPLookUpListener = function() {
-    var _this = this;
-
-    document.querySelector('body').addEventListener('mouseover', function(event) {
-        if (event.target.className.toLowerCase() === _this.IPLookUpClass) {
-            var ipaddress = event.target.innerText;
-            ipaddress = ipaddress.trimBlank();
-            _this.IPLookUp(ipaddress, event.target);
-        } else {
-            _this.tooltipIPNode.style.display = 'none';
-        }
-    });
-
-    document.querySelector('body').addEventListener('mouseout', function(event) {
-        if (event.target.className.toLowerCase() === _this.IPLookUpClass) {
-            _this.tooltipIPNode.style.display = 'none';
-        }
-    });
-
-    document.querySelector('body').addEventListener('click', function(event) {
-        if (event.target.className.toLowerCase() === _this.IPLookUpClass) {
-            var ipaddress = event.target.innerText;
-            ipaddress = ipaddress.trimBlank();
-            _this.IPLookUp(ipaddress, event.target);
-        } else {
-            _this.tooltipIPNode.style.display = 'none';
-        }
-    });
-};
-
-/**
- * NAT Table
- * @constructor
- */
-CanopyEnhancer.prototype.NATTable = function() {
-    if (this.currentCatIndex == 5 && this.currentPageIndex == 9) {
-        var _this = this;
-        // Tooltip
-        this.tooltipIPNode = document.createElement('div');
-        this.tooltipIPNode.id = 'cge-ip-lookup-tooltip';
-        this.tooltipIPNode.className = 'cge-tooltip';
-        document.getElementsByTagName("body")[0].appendChild(this.tooltipIPNode);
-
-        this.addIPLookUpListener();
-        this.addTagToIPAddresses('NAPTTBL');
-        if (this.refreshTime > 0) {
-            setInterval(function () {
-                _this.addTagToIPAddresses('NAPTTBL');
-            }, this.intervalsTimeout + 100);
-        }
-
-    }
 };
