@@ -511,7 +511,7 @@ CanopyEnhancer.prototype.renderBetterEvaluationTemplate = function() {
  * Initialize better evaluation
  */
 CanopyEnhancer.prototype.betterEvaluation = function() {
-    if (this.currentCatIndex == 3 && this.currentPageIndex == 4) {
+    if (this.apEvaluationBlock != null) {
         if (this.extractAPEvaluationData()) {
             if (this.refreshTime > 0) {
                 var _this = this;

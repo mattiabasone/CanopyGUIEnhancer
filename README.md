@@ -6,11 +6,31 @@ Available here: https://goo.gl/0SKMRJ
 
 ## Features
 
-### Version 1.0
-
 * Real time throughput on Statistics -> Ethernet and Statistics -> Radio.
 * MAC Address Lookup on ARP page.
 * IP Address Lookup on NAT Table page.
 * Improved AP Evaluation page.
 * New styles for tables and buttons (Twitter Bootstrap)
 * New styles for wrappers
+
+## Changelog
+
+### Version 1.3
+
+* AP Evaluation not rendered on radios with software version < 14.1.1
+
+### Version 1.2
+
+* Improved IP Lookup speed on NAT Log Page
+* Added settings for IP and MAC Lookup
+* Added highlight on selected IP/MAC
+* Renamed some CSS classes
+* Removed unused CSS classes
+
+### 1.1
+
+* Small Bug fixes
+
+### Version 1.0
+
+* First release
