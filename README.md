@@ -15,6 +15,13 @@ Available here: https://goo.gl/0SKMRJ
 
 ## Changelog
 
+### Version 1.4
+
+* Added graphs for real time traffic representation
+* Added some css rules for settings popup
+* [Bugfix] AP evaluation didn’t work properly with PMP100/430
+* [Bugfix] Spectrum Analyzer didn’t work with the extension enabled
+
 ### Version 1.3
 
 * AP Evaluation not rendered on radios with software version < 14.1.1
