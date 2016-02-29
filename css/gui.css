@@ -49,7 +49,7 @@ div#menu {
 div.section {
     background-color:#FDFDFD;
     border-width: 1px;
-    border-radius: 0 0 0 2px;
+    border-radius: 2px;
     -moz-border-radius: 0 0 0 2px;
     -webkit-border-radius: 0 0 0 2px;
     box-shadow: 2px 2px 10px rgba(0,0,0,0.3);

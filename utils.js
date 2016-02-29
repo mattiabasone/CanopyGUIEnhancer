@@ -70,6 +70,15 @@ String.prototype.isValidPubIP = function() {
 };
 
 /**
+ * Leading zero for string
+ *
+ * @returns {string}
+ */
+Number.prototype.leadingZero = function() {
+    return ('0'+this).slice(-2);
+};
+
+/**
  * IndexOf with regex
  *
  * @param regex

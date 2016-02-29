@@ -12,6 +12,7 @@ var CanopyEnhancer = function() {
     this.currentCatIndex = -1;
     this.currentPageIndex = -1;
     this.currentRadioMAC = "000000000000";
+    this.currentRadioType = "MIMO OFDM";
     this.MACLookUpClass = "cge-lookup-mac";
     this.IPLookUpClass = "cge-lookup-ip";
 
@@ -68,6 +69,7 @@ var CanopyEnhancer = function() {
     };
 
     this.evaluationFields = [
+        'Index',
         'Frequency',
         'Channel Bandwidth',
         'Cyclic Prefix',
@@ -126,16 +128,43 @@ CanopyEnhancer.prototype.initialize = function() {
     if (res != null) {
 
         this.currentRadioMAC = res[1].toUpperCase();
+
+        var page = document.getElementById("page");
+        var title = page.querySelector("h2");
+        if (title !== null) {
+            var titleString = title.innerText;
+            var resDevType = titleString.match(/.*GHz\s\-\sSubscriber\sModule\s\-\s([A-Fa-f0-9\-]{17})/);
+            if (resDevType != null) {
+                this.currentRadioType = 'FSK';
+            } else {
+                var resDevType = titleString.match(/.*GHz\sSISO\sOFDM\s\-\sSubscriber\sModule\s\-\s([A-Fa-f0-9\-]{17})/);
+                if (resDevType != null) {
+                    this.currentRadioType = 'SISO OFDM';
+                }
+            }
+        } else {
+            if (_this.debug === true) {
+                console.log("Title not found");
+            }
+        }
+
+        if (_this.debug === true) {
+            console.log("Current radio type: "+ this.currentRadioType);
+        }
+
         this.identifySection();
         this.getRefreshTime();
 
         chrome.storage.local.get(null, function (data) {
-            if (chrome.runtime.lastError || !data.hasOwnProperty('cge_custom_css')) {
+            if (chrome.runtime.lastError ||
+                !data.hasOwnProperty('cge_custom_css')
+            ) {
                 _this.settings = {
                     cge_enabled: 1,
                     cge_custom_css: 1,
                     cge_ip_lookup: 1,
-                    cge_mac_lookup: 1
+                    cge_mac_lookup: 1,
+                    cge_rtt_type: 'string'
                 };
                 chrome.storage.local.set(_this.settings);
             } else {
@@ -160,7 +189,10 @@ CanopyEnhancer.prototype.initialize = function() {
                 _this.NATTable();
 
                 var path = chrome.extension.getURL('css/style.css');
-                head.innerHTML += '<link rel="stylesheet" type="text/css" href="' + path + '" />';
+                document.getElementsByTagName('link')[1].insertAdjacentHTML(
+                    'afterend',
+                    '<link rel="stylesheet" type="text/css" href="' + path + '" />'
+                );
             } else {
                 if (_this.debug === true) {
                     console.log("CGE NOT Enabled!");
@@ -190,15 +222,22 @@ CanopyEnhancer.prototype.enhancedCSS = function() {
     if (this.settings.cge_custom_css === 1) {
         var path;
         var head = document.getElementsByTagName('head')[0];
+        var styleNum = document.getElementsByTagName('link').length - 1;
 
         path = chrome.extension.getURL('css/bootstrap-mini.css');
-        head.innerHTML += '<link rel="stylesheet" type="text/css" href="'+path+'" />';
+        document.getElementsByTagName('link')[styleNum].insertAdjacentHTML(
+            'afterend',
+            '<link rel="stylesheet" type="text/css" href="'+path+'" />'
+        );
         if (this.debug === true) {
             console.log("Added bootstrap-mini.css");
         }
 
         path = chrome.extension.getURL('css/gui.css');
-        head.innerHTML += '<link rel="stylesheet" type="text/css" href="'+path+'" />';
+        document.getElementsByTagName('link')[styleNum+1].insertAdjacentHTML(
+            'afterend',
+            '<link rel="stylesheet" type="text/css" href="'+path+'" />'
+        );
         if (this.debug === true) {
             console.log("Added gui.css");
         }
@@ -285,26 +324,17 @@ CanopyEnhancer.prototype.realTimeTraffic = function() {
     var _this = this;
     if ((this.currentCatIndex == 2 && this.currentPageIndex == 7) || (this.currentCatIndex == 2 && this.currentPageIndex == 9)) {
 
-        var inTrafficBlock, outTrafficBlock;
+        var sectionTitle = this.Sections[this.currentCatIndex].pages[this.currentPageIndex];
+        var mainBlockID, inTrafficBlock, outTrafficBlock;
         if (this.currentPageIndex == 7) {
+            mainBlockID = document.getElementById('SectionEthernet');
             inTrafficBlock = document.getElementById('FecCb_ifmib_ifInOctets');
             outTrafficBlock = document.getElementById('FecCb_ifmib_ifOutOctets');
         } else {
+            mainBlockID = document.getElementById('SectionRFCBStat');
             inTrafficBlock = document.getElementById('RfCb_ifmib_ifInOctets');
             outTrafficBlock = document.getElementById('RfCb_ifmib_ifOutOctets');
         }
-
-        var el = document.createElement("span");
-        el.id = 'cge-CurrInTraffic-wrap';
-        el.className = 'cge-real-time-throughput cge-color-blue-cambium';
-        el.innerHTML = ' (<span id="cge-CurrInTraffic">0.00</span> Mbps)</span>';
-        inTrafficBlock.parentNode.insertBefore(el, inTrafficBlock.nextSibling);
-
-        el = document.createElement("span");
-        el.id = 'cge-CurrOutTraffic-wrap';
-        el.className = 'cge-real-time-throughput cge-color-blue-cambium';
-        el.innerHTML = ' (<span id="cge-CurrOutTraffic">0.00</span> Mbps)';
-        outTrafficBlock.parentNode.insertBefore(el, outTrafficBlock.nextSibling);
 
         if ((this.refreshTime > 0)) {
 
@@ -316,31 +346,192 @@ CanopyEnhancer.prototype.realTimeTraffic = function() {
             prevOutTraffic = prevOutTraffic.byte2Mbit();
             prevOutTraffic = prevOutTraffic.round2();
 
-            setInterval(function () {
+            // Spawn graph block
+            if (_this.settings.cge_rtt_type === 'graph') {
 
-                var currInTraffic = parseInt(inTrafficBlock.innerText);
-                currInTraffic = currInTraffic.byte2Mbit();
-                currInTraffic = currInTraffic.round2();
+                mainBlockID.insertAdjacentHTML(
+                    'beforebegin',
+                    '<div class="section" id="SectionRTGTraffic">' +
+                    '<h2 class="sectiontitle"><span class="sectiontitletext">'+sectionTitle+' Real Time Traffic</span><span class="MenuBar" style="float: right;"><img class="MenuImg" src="_min.gif?mac_esn=' + this.currentRadioMAC.toLocaleLowerCase() + '" style="cursor: pointer; margin-right: 5px;"></span></h2>' +
+                    '<div id="RTGWrapper"><canvas id="RTGChart" width="1280" height="270"></canvas><div id="RTGLegend"></div></div>' +
+                    '</div>'
+                );
 
-                var currOutTraffic = parseInt(outTrafficBlock.innerText);
-                currOutTraffic = currOutTraffic.byte2Mbit();
-                currOutTraffic = currOutTraffic.round2();
+                var date = new Date;
 
-                var inTrafficDiff = currInTraffic - prevInTraffic;
-                var outTrafficDiff = currOutTraffic - prevOutTraffic;
-
-                if (inTrafficDiff > 0) {
-                    document.getElementById('cge-CurrInTraffic').innerHTML = ((inTrafficDiff / _this.refreshTime).round2()).toString();
+                var i = 4;
+                var timeLabels = [];
+                while (i >= 0) {
+                    var tmpTime = new Date(date - ( (this.refreshTime * i) * 1000));
+                    var timestring = tmpTime.getHours().leadingZero() + ':'+tmpTime.getMinutes().leadingZero()+':'+tmpTime.getSeconds().leadingZero();
+                    timeLabels.push(timestring);
+                    i--;
                 }
 
-                if (outTrafficDiff > 0) {
-                    document.getElementById('cge-CurrOutTraffic').innerHTML = ((outTrafficDiff / _this.refreshTime).round2()).toString();
-                }
+                var chartData = {
+                    labels: timeLabels,
+                    datasets: [
+                        {
+                            label: "Interface Traffic In (Mbps)",
+                            fillColor: "rgba(220,220,220,0.2)",
+                            strokeColor: "rgba(220,220,220,1)",
+                            pointColor: "rgba(220,220,220,1)",
+                            pointStrokeColor: "#fff",
+                            pointHighlightFill: "#fff",
+                            pointHighlightStroke: "rgba(220,220,220,1)",
+                            data: [0, 0, 0, 0, 0]
+                        },
+                        {
+                            label: "Interface Traffic Out (Mbps)",
+                            fillColor: "rgba(151,187,205,0.2)",
+                            strokeColor: "rgba(151,187,205,1)",
+                            pointColor: "rgba(151,187,205,1)",
+                            pointStrokeColor: "#fff",
+                            pointHighlightFill: "#fff",
+                            pointHighlightStroke: "rgba(151,187,205,1)",
+                            data: [0, 0, 0, 0, 0]
+                        }
+                    ]
+                };
 
-                prevInTraffic = currInTraffic;
-                prevOutTraffic = currOutTraffic;
+                var chartOpt = {
 
-            }, this.intervalsTimeout);
+                    animation: true,
+                    animationSteps: 20,
+                    scaleBeginAtZero: true,
+                    responsive: true,
+
+                    ///Boolean - Whether grid lines are shown across the chart
+                    scaleShowGridLines : true,
+
+                    //String - Colour of the grid lines
+                    scaleGridLineColor : "rgba(0,0,0,.05)",
+
+                    //Number - Width of the grid lines
+                    scaleGridLineWidth : 1,
+
+                    //Boolean - Whether to show horizontal lines (except X axis)
+                    scaleShowHorizontalLines: true,
+
+                    //Boolean - Whether to show vertical lines (except Y axis)
+                    scaleShowVerticalLines: true,
+
+                    //Boolean - Whether the line is curved between points
+                    bezierCurve : true,
+
+                    //Number - Tension of the bezier curve between points
+                    bezierCurveTension : 0.4,
+
+                    //Boolean - Whether to show a dot for each point
+                    pointDot : true,
+
+                    //Number - Radius of each point dot in pixels
+                    pointDotRadius : 4,
+
+                    //Number - Pixel width of point dot stroke
+                    pointDotStrokeWidth : 1,
+
+                    //Number - amount extra to add to the radius to cater for hit detection outside the drawn point
+                    pointHitDetectionRadius : 20,
+
+                    //Boolean - Whether to show a stroke for datasets
+                    datasetStroke : true,
+
+                    //Number - Pixel width of dataset stroke
+                    datasetStrokeWidth : 2,
+
+                    //Boolean - Whether to fill the dataset with a colour
+                    datasetFill : true,
+
+                    //String - A legend template
+                    legendTemplate : "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li><span style=\"background-color:<%=datasets[i].strokeColor%>; display: inline-block; width:10px; height:10px; margin-right:5px;\"></span><%if(datasets[i].label){%><%=datasets[i].label%><%}%></li><%}%></ul>"
+
+                };
+
+                var ctx = document.getElementById("RTGChart").getContext("2d");
+                var realTimeTrafficChart = new Chart(ctx).Line(chartData, chartOpt);
+                document.getElementById('RTGLegend').innerHTML = realTimeTrafficChart.generateLegend();
+
+                // Updating graph
+                setInterval(function () {
+
+                    var tmpTime = new Date();
+                    var timestring = tmpTime.getHours().leadingZero() + ':'+tmpTime.getMinutes().leadingZero()+':'+tmpTime.getSeconds().leadingZero();
+
+                    var currInTraffic = parseInt(inTrafficBlock.innerText);
+                    currInTraffic = currInTraffic.byte2Mbit();
+                    currInTraffic = currInTraffic.round2();
+
+                    var currOutTraffic = parseInt(outTrafficBlock.innerText);
+                    currOutTraffic = currOutTraffic.byte2Mbit();
+                    currOutTraffic = currOutTraffic.round2();
+
+                    var inTrafficDiff = currInTraffic - prevInTraffic;
+                    var outTrafficDiff = currOutTraffic - prevOutTraffic;
+
+
+                    var inTrafficAdd, outTrafficAdd;
+                    if (inTrafficDiff > 0) {
+                        inTrafficAdd = ((inTrafficDiff / _this.refreshTime).round2());
+                    } else {
+                        inTrafficAdd = 0;
+                    }
+
+                    if (outTrafficDiff > 0) {
+                        outTrafficAdd = ((outTrafficDiff / _this.refreshTime).round2());
+                    } else {
+                        outTrafficAdd = 0;
+                    }
+
+                    realTimeTrafficChart.addData([inTrafficAdd, outTrafficAdd], timestring);
+                    realTimeTrafficChart.removeData();
+
+                    prevInTraffic = currInTraffic;
+                    prevOutTraffic = currOutTraffic;
+
+                }, this.intervalsTimeout);
+
+            } else {
+
+                var el = document.createElement("span");
+                el.id = 'cge-CurrInTraffic-wrap';
+                el.className = 'cge-real-time-throughput cge-color-blue-cambium';
+                el.innerHTML = ' (<span id="cge-CurrInTraffic">0.00</span> Mbps)</span>';
+                inTrafficBlock.parentNode.insertBefore(el, inTrafficBlock.nextSibling);
+
+                el = document.createElement("span");
+                el.id = 'cge-CurrOutTraffic-wrap';
+                el.className = 'cge-real-time-throughput cge-color-blue-cambium';
+                el.innerHTML = ' (<span id="cge-CurrOutTraffic">0.00</span> Mbps)';
+                outTrafficBlock.parentNode.insertBefore(el, outTrafficBlock.nextSibling);
+
+                setInterval(function () {
+
+                    var currInTraffic = parseInt(inTrafficBlock.innerText);
+                    currInTraffic = currInTraffic.byte2Mbit();
+                    currInTraffic = currInTraffic.round2();
+
+                    var currOutTraffic = parseInt(outTrafficBlock.innerText);
+                    currOutTraffic = currOutTraffic.byte2Mbit();
+                    currOutTraffic = currOutTraffic.round2();
+
+                    var inTrafficDiff = currInTraffic - prevInTraffic;
+                    var outTrafficDiff = currOutTraffic - prevOutTraffic;
+
+                    if (inTrafficDiff > 0) {
+                        document.getElementById('cge-CurrInTraffic').innerHTML = ((inTrafficDiff / _this.refreshTime).round2()).toString();
+                    }
+
+                    if (outTrafficDiff > 0) {
+                        document.getElementById('cge-CurrOutTraffic').innerHTML = ((outTrafficDiff / _this.refreshTime).round2()).toString();
+                    }
+
+                    prevInTraffic = currInTraffic;
+                    prevOutTraffic = currOutTraffic;
+
+                }, this.intervalsTimeout);
+
+            }
         } else {
             document.getElementById('cge-CurrOutTraffic-wrap').innerHTML = ' (Set Webpage Auto Update > 0 for real time throughput)';
             document.getElementById('cge-CurrInTraffic-wrap').innerHTML = ' (Set Webpage Auto Update > 0 for real time throughput)';
@@ -445,14 +636,16 @@ CanopyEnhancer.prototype.renderBetterEvaluationTemplate = function() {
 
     for(var i = 0;i<this.APEvaluationObj.length;i++) {
         var evalEntry = this.APEvaluationObj[i];
+        var currIndex = parseInt(evalEntry['Index']);
+        delete evalEntry['Index'];
 
         var insRow = true;
         var counter = 0;
         evaluationContent += '<div class="cge-ap-evaluation-entry-title">';
-        if (i == this.currentEvaluatinEntry) {
-            evaluationContent += '<b class="cge-color-blue-cambium">Entry: ' + i + ' - Current AP</b><br />';
+        if (currIndex == this.currentEvaluatinEntry) {
+            evaluationContent += '<b class="cge-color-blue-cambium">Entry: ' + currIndex + ' - Current AP</b><br />';
         } else {
-            evaluationContent += '<b>Entry: ' + i + '</b><br />';
+            evaluationContent += '<b>Entry: ' + currIndex + '</b><br />';
         }
         evaluationContent += '</div>';
         evaluationContent += '<table class="table table-responsive table-striped table-condensed table-bordered cge-ap-evaluation-entry-table"><tbody>';
@@ -512,17 +705,21 @@ CanopyEnhancer.prototype.renderBetterEvaluationTemplate = function() {
  */
 CanopyEnhancer.prototype.betterEvaluation = function() {
     if (this.apEvaluationBlock != null) {
-        if (this.extractAPEvaluationData()) {
-            if (this.refreshTime > 0) {
-                var _this = this;
-                _this.renderBetterEvaluationTemplate();
-                setInterval(function () {
-                    _this.extractAPEvaluationData();
+        if (this.currentRadioType == "MIMO OFDM") {
+            if (this.extractAPEvaluationData()) {
+                if (this.refreshTime > 0) {
+                    var _this = this;
                     _this.renderBetterEvaluationTemplate();
-                }, this.intervalsTimeout);
-            } else {
-                this.renderBetterEvaluationTemplate();
+                    setInterval(function () {
+                        _this.extractAPEvaluationData();
+                        _this.renderBetterEvaluationTemplate();
+                    }, this.intervalsTimeout);
+                } else {
+                    this.renderBetterEvaluationTemplate();
+                }
             }
+        } else {
+
         }
     }
 };

@@ -56,8 +56,41 @@ body {
 }
 
 /** =popup **/
+
+#cge_popup_body {
+    background-color: #002a56;
+    padding: 0;
+    margin: 0;
+}
+
+#cge_popup_wrapper {
+    padding: 10px;
+}
+
 #cge_form_settings {
-    width: 250px;
+    width: 350px;
+}
+
+#cge_form_settings legend {
+    font-size: 16px;
+    background-color: white;
+    border-radius: 0;
+    padding:0 10px 0 10px;
+}
+
+#cge_form_settings fieldset {
+    background-color: white;
+    border:1px solid white;
+    border-radius: 0;
+}
+
+#cge_form_settings hr {
+    border: 0;
+    border-top: 1px solid #002a56;
+}
+
+#cge_form_settings .form-group {
+    padding: 5px;
 }
 
 /** =tooltip **/
@@ -87,4 +120,9 @@ body {
     left:145px;
 
     bottom:-7px;
+}
+
+/* =graphs */
+#RTGWrapper {
+    padding:15px;
 }
