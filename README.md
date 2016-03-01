@@ -19,6 +19,7 @@ Available here: https://goo.gl/0SKMRJ
 
 * Added graphs for real time traffic representation
 * Added some css rules for settings popup
+* Added alert message if webpage auto update is not set
 * [Bugfix] AP evaluation didn’t work properly with PMP100/430
 * [Bugfix] Spectrum Analyzer didn’t work with the extension enabled
 

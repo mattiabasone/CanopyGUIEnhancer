@@ -4,7 +4,7 @@
   "name": "CanopyGUIEnhancer",
   "short_name": "CGE",
   "description": "This extension enhance the standard CambiumNetworks Canopy Web GUI",
-  "version": "1.4",
+  "version": "1.4.1",
   "author": "Mattia Basone <mattia.basone@gmail.com>",
 
   "browser_action": {

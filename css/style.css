@@ -18,6 +18,14 @@ body {
     background-color: rgba(0, 152, 255, 0.15) !important;
 }
 
+.cge-error {
+    padding: 10px;
+    background-color: #FFCDD2;
+    border: 1px solid #B71C1C;
+    color: #B71C1C;
+    margin: 1em;
+}
+
 .text-center {
     text-align: center;
 }

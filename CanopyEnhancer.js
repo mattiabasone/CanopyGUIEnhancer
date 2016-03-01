@@ -533,8 +533,10 @@ CanopyEnhancer.prototype.realTimeTraffic = function() {
 
             }
         } else {
-            document.getElementById('cge-CurrOutTraffic-wrap').innerHTML = ' (Set Webpage Auto Update > 0 for real time throughput)';
-            document.getElementById('cge-CurrInTraffic-wrap').innerHTML = ' (Set Webpage Auto Update > 0 for real time throughput)';
+            mainBlockID.insertAdjacentHTML(
+                'beforebegin',
+                '<div class="cge-error">Set Webpage Auto Update > 0 for real time throughput (Configuration => General)</div>'
+            );
         }
     }
 };
