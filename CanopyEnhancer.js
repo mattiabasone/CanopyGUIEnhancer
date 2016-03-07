@@ -12,7 +12,7 @@ var CanopyEnhancer = function() {
     this.currentCatIndex = -1;
     this.currentPageIndex = -1;
     this.currentRadioMAC = "000000000000";
-    this.currentRadioType = "MIMO OFDM";
+    this.currentRadioType = "MIMO_OFDM";
     this.MACLookUpClass = "cge-lookup-mac";
     this.IPLookUpClass = "cge-lookup-ip";
 
@@ -68,51 +68,142 @@ var CanopyEnhancer = function() {
         name: "Copyright"
     };
 
-    this.evaluationFields = [
-        'Index',
-        'Frequency',
-        'Channel Bandwidth',
-        'Cyclic Prefix',
-        'ESN',
-        'Region',
-        'Beacon Receive Power',
-        'Beacon Count',
-        'FECEn',
-        'Type',
-        'Multipoint Avail',
-        'Age',
-        'Lockout',
-        'RegFail',
-        'Range',
-        'MaxRange',
-        'TxBER',
-        'EBcast',
-        'Session Count',
-        'NoLUIDS',
-        'OutOfRange',
-        'AuthFail',
-        'EncryptFail',
-        'Rescan Req',
-        'SMLimitReached',
-        'NoVC\'s',
-        'VCRsv/430smFail',
-        'VCActFail',
-        'AP Gain',
-        'AP RcvT',
-        'SectorID',
-        'Color Code',
-        'BeaconVersion',
-        'SectorUserCount',
-        'SyncSrc',
-        'NumULSlots',
-        'NumDLSlots',
-        'NumULContSlots',
-        'WhiteSched',
-        'ICC',
-        'Authentication',
-        'SM PPPoE',
-        'Frame Period'
-    ];
+    this.APEvaluationFields = {
+        MIMO_OFDM: [
+            'Index',
+            'Frequency',
+            'Channel Bandwidth',
+            'Cyclic Prefix',
+            'ESN',
+            'Region',
+            'Beacon Receive Power',
+            'Beacon Count',
+            'FECEn',
+            'Type',
+            'Multipoint Avail',
+            'Age',
+            'Lockout',
+            'RegFail',
+            'Range',
+            'MaxRange',
+            'TxBER',
+            'EBcast',
+            'Session Count',
+            'NoLUIDS',
+            'OutOfRange',
+            'AuthFail',
+            'EncryptFail',
+            'Rescan Req',
+            'SMLimitReached',
+            'NoVC\'s',
+            'VCRsv/430smFail',
+            'VCActFail',
+            'AP Gain',
+            'AP RcvT',
+            'SectorID',
+            'Color Code',
+            'BeaconVersion',
+            'SectorUserCount',
+            'SyncSrc',
+            'NumULSlots',
+            'NumDLSlots',
+            'NumULContSlots',
+            'WhiteSched',
+            'ICC',
+            'Authentication',
+            'SM PPPoE',
+            'Frame Period'
+        ],
+        SISO_OFDM: [
+            'Index',
+            'Frequency',
+            'Channel Bandwidth',
+            'Cyclic Prefix',
+            'ESN',
+            'Region',
+            'Beacon Receive Power Level',
+            'Beacon Count',
+            'FECEn',
+            'Type',
+            'Multipoint Avail',
+            'Age',
+            'Lockout',
+            'RegFail',
+            'Range',
+            'MaxRange',
+            'TxBER',
+            'EBcast',
+            'Session Count',
+            'NoLUIDS',
+            'OutOfRange',
+            'AuthFail',
+            'EncryptFail',
+            'Rescan Req',
+            'SMLimitReached',
+            'NoVC\'s',
+            'VCRsv/430smFail',
+            'VCActFail',
+            'AP Gain',
+            'AP RcvT',
+            'SectorID',
+            'Color Code',
+            'BeaconVersion',
+            'SectorUserCount',
+            'SyncSrc',
+            'NumULSlots',
+            'NumDLSlots',
+            'NumULContSlots',
+            'WhiteSched',
+            'ICC',
+            'Authentication',
+            'SM PPPoE',
+            'Frame Period'
+        ],
+        FSK: [
+            'Index',
+            'Frequency',
+            'ESN',
+            'Region',
+            'Jitter',
+            'Beacon Receive Power Level',
+            'Beacon Count',
+            'BRcvW',
+            'FECEn',
+            'Type',
+            'Multipoint Avail',
+            'Age',
+            'Lockout',
+            'RegFail',
+            'Range',
+            'MaxRange',
+            'TxBER',
+            'EBcast',
+            'Session Count',
+            'NoLUIDS',
+            'OutOfRange',
+            'AuthFail',
+            'EncryptFail',
+            'Rescan Req',
+            'SMLimitReached',
+            'NoVC\'s',
+            'VCRsvFail',
+            'VCActFail',
+            'AP Gain',
+            'AP RcvT:',
+            'FrameNumber',
+            'SectorID',
+            'Color Code',
+            'BeaconVersion',
+            'SectorUserCount',
+            'NumULHalfSlots',
+            'NumDLHalfSlots',
+            'NumULContSlots',
+            'WhiteSched',
+            'Authentication',
+            'SM PPPoE',
+            'Frame Period'
+        ]
+    }
 };
 
 /**
@@ -139,7 +230,7 @@ CanopyEnhancer.prototype.initialize = function() {
             } else {
                 var resDevType = titleString.match(/.*GHz\sSISO\sOFDM\s\-\sSubscriber\sModule\s\-\s([A-Fa-f0-9\-]{17})/);
                 if (resDevType != null) {
-                    this.currentRadioType = 'SISO OFDM';
+                    this.currentRadioType = 'SISO_OFDM';
                 }
             }
         } else {
@@ -372,23 +463,23 @@ CanopyEnhancer.prototype.realTimeTraffic = function() {
                     labels: timeLabels,
                     datasets: [
                         {
-                            label: "Interface Traffic In (Mbps)",
-                            fillColor: "rgba(220,220,220,0.2)",
-                            strokeColor: "rgba(220,220,220,1)",
-                            pointColor: "rgba(220,220,220,1)",
+                            label: "Interface Traffic In",
+                            fillColor: "rgba(88,88,88,0.2)",
+                            strokeColor: "rgba(88,88,88,1)",
+                            pointColor: "rgba(88,88,88,1)",
                             pointStrokeColor: "#fff",
                             pointHighlightFill: "#fff",
-                            pointHighlightStroke: "rgba(220,220,220,1)",
+                            pointHighlightStroke: "rgba(88,88,88,1)",
                             data: [0, 0, 0, 0, 0]
                         },
                         {
-                            label: "Interface Traffic Out (Mbps)",
-                            fillColor: "rgba(151,187,205,0.2)",
-                            strokeColor: "rgba(151,187,205,1)",
-                            pointColor: "rgba(151,187,205,1)",
+                            label: "Interface Traffic Out",
+                            fillColor: "rgba(50,143,191,0.2)",
+                            strokeColor: "rgba(50,143,191,1)",
+                            pointColor: "rgba(50,143,191,1)",
                             pointStrokeColor: "#fff",
                             pointHighlightFill: "#fff",
-                            pointHighlightStroke: "rgba(151,187,205,1)",
+                            pointHighlightStroke: "rgba(50,143,191,1)",
                             data: [0, 0, 0, 0, 0]
                         }
                     ]
@@ -444,7 +535,7 @@ CanopyEnhancer.prototype.realTimeTraffic = function() {
                     datasetFill : true,
 
                     //String - A legend template
-                    legendTemplate : "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li><span style=\"background-color:<%=datasets[i].strokeColor%>; display: inline-block; width:10px; height:10px; margin-right:5px;\"></span><%if(datasets[i].label){%><%=datasets[i].label%><%}%></li><%}%></ul>"
+                    legendTemplate : "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li><span style=\"background-color:<%=datasets[i].strokeColor%>; display: inline-block; width:10px; height:10px; margin-right:5px;\"></span><%if(datasets[i].label){%><%=datasets[i].label%><%}%>: <span style=\"color:<%=datasets[i].strokeColor%>\"><span id=\"legend-<%=datasets[i].label.replace(/\\s/g, '')%>\">0.00</span> Mbps</span></li><%}%></ul>"
 
                 };
 
@@ -483,8 +574,14 @@ CanopyEnhancer.prototype.realTimeTraffic = function() {
                         outTrafficAdd = 0;
                     }
 
+                    inTrafficAdd = inTrafficAdd.toFixed(2);
+                    outTrafficAdd = outTrafficAdd.toFixed(2);
+
                     realTimeTrafficChart.addData([inTrafficAdd, outTrafficAdd], timestring);
                     realTimeTrafficChart.removeData();
+
+                    document.getElementById('legend-InterfaceTrafficIn').innerHTML = inTrafficAdd;
+                    document.getElementById('legend-InterfaceTrafficOut').innerHTML = outTrafficAdd;
 
                     prevInTraffic = currInTraffic;
                     prevOutTraffic = currOutTraffic;
@@ -519,11 +616,11 @@ CanopyEnhancer.prototype.realTimeTraffic = function() {
                     var outTrafficDiff = currOutTraffic - prevOutTraffic;
 
                     if (inTrafficDiff > 0) {
-                        document.getElementById('cge-CurrInTraffic').innerHTML = ((inTrafficDiff / _this.refreshTime).round2()).toString();
+                        document.getElementById('cge-CurrInTraffic').innerHTML = ((inTrafficDiff / _this.refreshTime).round2()).toFixed(2);
                     }
 
                     if (outTrafficDiff > 0) {
-                        document.getElementById('cge-CurrOutTraffic').innerHTML = ((outTrafficDiff / _this.refreshTime).round2()).toString();
+                        document.getElementById('cge-CurrOutTraffic').innerHTML = ((outTrafficDiff / _this.refreshTime).round2()).toFixed(2);
                     }
 
                     prevInTraffic = currInTraffic;
@@ -551,6 +648,8 @@ CanopyEnhancer.prototype.realTimeTraffic = function() {
  */
 CanopyEnhancer.prototype.extractAPEvaluationData = function() {
     var rawAPEval = this.apEvaluationBlock.innerHTML;
+    var tmpAPEvalFields = this.APEvaluationFields[this.currentRadioType];
+
     var regex = /<br\s*[\/]?>/gi;
     rawAPEval = rawAPEval.replace(regex, " ");
     rawAPEval = rawAPEval.replace(/\&nbsp\;/gi, " ");
@@ -586,12 +685,12 @@ CanopyEnhancer.prototype.extractAPEvaluationData = function() {
         var tmpMatch;
         var tmpRegexp;
 
-        for(var k = 0;k < this.evaluationFields.length;k++) {
+        for(var k = 0;k < tmpAPEvalFields.length;k++) {
             var kplus = k+1;
-            var pre_pattern = RegExp.quote(this.evaluationFields[k]);
+            var pre_pattern = RegExp.quote(tmpAPEvalFields[k]);
 
-            if (kplus < this.evaluationFields.length) {
-                var post_pattern = RegExp.quote(this.evaluationFields[kplus]);
+            if (kplus < tmpAPEvalFields.length) {
+                var post_pattern = RegExp.quote(tmpAPEvalFields[kplus]);
                 if (pre_pattern == 'RegFail') {
                     tmpRegexp = new RegExp(pre_pattern + " ([0-9]+).*" + post_pattern+"\:");
                 } else {
@@ -660,7 +759,8 @@ CanopyEnhancer.prototype.renderBetterEvaluationTemplate = function() {
             }
             switch (prop) {
                 case 'Beacon Receive Power':
-                    var tmpres = evalEntry[prop].match(/\-(([0-9]+)\.([0-9]))/);
+                case 'Beacon Receive Power Level':
+                    var tmpres = evalEntry[prop].match(/\-(([0-9]+)(\.([0-9]))?)/);
                     if (tmpres) {
                         var tmpsignal = parseFloat(tmpres[1]);
                         tmpsignal = -tmpsignal;
@@ -707,7 +807,7 @@ CanopyEnhancer.prototype.renderBetterEvaluationTemplate = function() {
  */
 CanopyEnhancer.prototype.betterEvaluation = function() {
     if (this.apEvaluationBlock != null) {
-        if (this.currentRadioType == "MIMO OFDM") {
+        if (this.APEvaluationFields[this.currentRadioType] != 'undefined') {
             if (this.extractAPEvaluationData()) {
                 if (this.refreshTime > 0) {
                     var _this = this;

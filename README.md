@@ -4,6 +4,14 @@ CanopyGUIEnhancer (Chrome Extension)
 This extension enhance the standard CambiumNetworks Canopy Web GUI (tested on PMP100 PMP430 and PMP450)
 Available here: https://goo.gl/0SKMRJ
 
+## Requirements
+
+The extension has been tested on the following software versions, with old versions not all features may work.
+
+* PMP100: 13.4.1
+* PMP430: 13.4.1
+* PMP450: 14.1.1
+
 ## Features
 
 * Real time throughput on Statistics -> Ethernet and Statistics -> Radio.
