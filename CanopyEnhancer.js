@@ -3,25 +3,47 @@
  * @constructor
  */
 var CanopyEnhancer = function() {
-    this.debug = false;
     this.refreshTime = 0;
     this.tooltipMACNode = {};
     this.tooltipIPNode = {};
-    this.settings = {};
+    this.settings = {
+        cge_enabled: 1,
+        cge_custom_css: 1,
+        cge_ip_lookup: 1,
+        cge_mac_lookup: 1,
+        cge_ap_evaluation: 1,
+        cge_rtt_type: 'string',
+        cge_debug : 0
+    };
     this.intervalsTimeout = 0;
     this.currentCatIndex = -1;
     this.currentPageIndex = -1;
     this.currentRadioMAC = "000000000000";
     this.currentRadioType = "MIMO_OFDM";
-    this.MACLookUpClass = "cge-lookup-mac";
-    this.IPLookUpClass = "cge-lookup-ip";
 
+    /**
+     * Traffic
+     */
+    this.mainTrafficBlockID = null;
+    this.inTrafficID = null;
+    this.outTrafficID = null;
+    this.realTimeTrafficChart = null;
+    this.trafficData = {
+        started: false,
+        prevInOctets: 0,
+        inTraffic: 0,
+        prevOutOctets: 0,
+        outTraffic: 0
+    };
+
+    /**
+     * AP Evaluation
+     */
     this.apEvaluationBlock = document.getElementById('APEval'); // #APEval
     this.APEvaluationObj = [];
     this.apSelectionMethod = "";
     this.currentEvaluatinEntry = -1;
     this.currentSessionStatus = "";
-    this.titleSeparator = "→";
 
     this.Sections = [];
     this.Sections[0] = {
@@ -211,14 +233,10 @@ var CanopyEnhancer = function() {
  */
 CanopyEnhancer.prototype.initialize = function() {
     var _this = this;
+    this.getRadioMac();
+    if (this.currentRadioMAC != '000000000000') {
 
-    var head = document.getElementsByTagName('head')[0];
-    var stylesheethref = document.getElementsByTagName('link')[0].getAttribute('href');
-    var res = stylesheethref.match(/\_canopy\.css\?mac_esn\=([A-Fa-f0-9]{12})/);
-
-    if (res != null) {
-
-        this.currentRadioMAC = res[1].toUpperCase();
+        this.loadSettings();
 
         var page = document.getElementById("page");
         var title = page.querySelector("h2");
@@ -228,79 +246,181 @@ CanopyEnhancer.prototype.initialize = function() {
             if (resDevType != null) {
                 this.currentRadioType = 'FSK';
             } else {
-                var resDevType = titleString.match(/.*GHz\sSISO\sOFDM\s\-\sSubscriber\sModule\s\-\s([A-Fa-f0-9\-]{17})/);
+                resDevType = titleString.match(/.*GHz\sSISO\sOFDM\s\-\sSubscriber\sModule\s\-\s([A-Fa-f0-9\-]{17})/);
                 if (resDevType != null) {
                     this.currentRadioType = 'SISO_OFDM';
                 }
             }
         } else {
-            if (_this.debug === true) {
+            if (_this.debugMessages() === true) {
                 console.log("Title not found");
             }
         }
 
-        if (_this.debug === true) {
-            console.log("Current radio type: "+ this.currentRadioType);
+        if (_this.debugMessages() === true) {
+            console.log("Current radio type: " + this.currentRadioType);
         }
 
         this.identifySection();
         this.getRefreshTime();
 
-        chrome.storage.local.get(null, function (data) {
-            if (chrome.runtime.lastError ||
-                !data.hasOwnProperty('cge_custom_css')
-            ) {
-                _this.settings = {
-                    cge_enabled: 1,
-                    cge_custom_css: 1,
-                    cge_ip_lookup: 1,
-                    cge_mac_lookup: 1,
-                    cge_rtt_type: 'string'
-                };
-                chrome.storage.local.set(_this.settings);
-            } else {
-                _this.settings = data;
-            }
-            if (_this.debug === true) {
-                console.log("Loaded settings:");
-                console.log(_this.settings);
-            }
-            if (_this.settings.cge_enabled === 1) {
+        if (_this.debugMessages() === true) {
+            console.log("CGE Enabled!");
+            console.log("Current radio MAC " + _this.currentRadioMAC);
+            console.log("Current Section Category: " + _this.getCurrentCatName());
+            console.log("Current Section Page: " + _this.getCurrentPageName());
+        }
 
-                if (_this.debug === true) {
-                    console.log("CGE Enabled!");
-                    console.log("Current radio MAC " + _this.currentRadioMAC);
-                    console.log("Current Section Category: " + _this.getCurrentCatName());
-                    console.log("Current Section Page: " + _this.getCurrentPageName());
-                }
-
-                _this.realTimeTraffic();
-                _this.betterEvaluation();
-                _this.ARPPageMacLookup();
-                _this.NATTable();
-
-                var path = chrome.extension.getURL('css/style.css');
-                document.getElementsByTagName('link')[1].insertAdjacentHTML(
-                    'afterend',
-                    '<link rel="stylesheet" type="text/css" href="' + path + '" />'
-                );
-            } else {
-                if (_this.debug === true) {
-                    console.log("CGE NOT Enabled!");
-                }
-            }
-            _this.enhancedCSS();
-            return true;
-        });
+        _this.enhancedCSS();
+        _this.realTimeTraffic();
+        _this.betterEvaluation();
+        _this.ARPPageMacLookup();
+        _this.NATTable();
     }
 };
 
 /**
- * Is a Canopy Device?
+ * Get WebPage Auto Update setting
+ */
+CanopyEnhancer.prototype.getRefreshTime = function() {
+    var bodyOnload = document.getElementsByTagName('body')[0].getAttribute('onload');
+    var match = bodyOnload.match(/handleLoad\(([0-9]+)\,.*/);
+    if (match[1]) {
+        this.refreshTime = match[1];
+        this.intervalsTimeout = (this.refreshTime * 1000) + 1;
+    } else {
+        this.refreshTime = 0;
+    }
+};
+
+/**
+ * SetUpAJAX
+ */
+CanopyEnhancer.prototype.SetUpAJAX = function() {
+    var _this = this;
+
+    if (this.refreshTime > 0) {
+        function SetUpAJAX() {
+            var request = document.request;
+            if (request.readyState > 0 && request.readyState < 4) {
+                return;
+            }
+            var vars = [];
+            var sections = getElementsByClassName(document, 'table', 'section');
+            for (var j = 0; j < sections.length; j++) {
+                if (!sections[j].style.display || sections[j].style.display != "none") {
+                    vars = vars.concat(getElementsByClassName(sections[j], 'span', 'var'));
+                }
+            }
+            var params = location.search.substr(1);
+            for (var i = 0; i < vars.length; i++) {
+                params += '&' + vars[i].id + '=' + GetVarRefreshOption(vars[i].id);
+            }
+            params += '&' + RebootClass + '= ';
+            request.open("POST", "query.cgi", true);
+            request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            request.send(params);
+            request.onreadystatechange = function () {
+                var request = document.request;
+                if (request.readyState == 4) {
+                    if (request.status == 200) {
+                        if (request.responseXML) {
+
+                            if (_this.isTrafficPage()) {
+                                _this.updateTrafficData(
+                                    request.responseXML.getElementById(_this.inTrafficID).firstChild.nodeValue,
+                                    request.responseXML.getElementById(_this.outTrafficID).firstChild.nodeValue
+                                );
+                            }
+
+                            var vars = request.responseXML.getElementsByTagName('var');
+                            for (var i = 0; i < vars.length; i++) {
+                                var id = vars[i].getAttribute('id');
+                                if (id != RebootClass) {
+                                    var htmlCode = '';
+                                    if (vars[i].hasChildNodes())
+                                        htmlCode = vars[i].firstChild.nodeValue;
+                                    id = PerformRefreshOverride(id, htmlCode);
+                                    if (id) {
+                                        var parent = document.getElementById(id);
+                                        if (parent) {
+                                            parent.innerHTML = htmlCode;
+                                            if (document.createEvent) {
+                                                var event = document.createEvent("Event");
+                                                event.initEvent("change", true, true);
+                                                parent.dispatchEvent(event);
+                                            } else if (document.createEventObject) {
+                                                var evObj = document.createEventObject();
+                                                parent.fireEvent("onclick", evObj);
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    var rebootBoxes = getElementsByClassName(document, 'span', RebootClass);
+                                    for (var j = 0; j < rebootBoxes.length; j++) {
+                                        if (vars[i].hasChildNodes() && vars[i].firstChild.nodeValue) {
+                                            rebootBoxes[j].innerHTML = vars[i].firstChild.nodeValue;
+                                        } else {
+                                            if (rebootBoxes[j].hasChildNodes()) {
+                                                while (rebootBoxes[j].lastChild) {
+                                                    rebootBoxes[j].removeChild(rebootBoxes[j].lastChild);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else if (request.status == 401) {
+                        clearInterval(document.ajaxtimerid);
+                        if (!document.rebootId)
+                            window.location.reload();
+                    }
+                }
+            };
+        }
+        clearInterval(document.ajaxtimerid);
+        SetUpAJAX();
+        document.ajaxtimerid = setInterval(SetUpAJAX, (this.refreshTime * 1000));
+    }
+};
+
+/**
+ * Get Radio MAC Address
  * @returns {boolean}
  */
-CanopyEnhancer.prototype.isCanopy = function() {
-    if (this.currentRadioMAC != '000000000000') {
+CanopyEnhancer.prototype.getRadioMac = function() {
+    var stylesheethref = document.getElementsByTagName('link')[0].getAttribute('href');
+    var res = stylesheethref.match(/\_canopy\.css\?mac_esn\=([A-Fa-f0-9]{12})/);
+    if (res != null) {
+        this.currentRadioMAC = res[1].toUpperCase();
+    } else {
+        this.currentRadioMAC = '000000000000';
+    }
+};
+
+/**
+ * Load settings
+ */
+CanopyEnhancer.prototype.loadSettings = function() {
+    var _this = this;
+    try {
+        var settings = JSON.parse(document.CGESettings);
+        for (var key in settings) {
+            if (!settings.hasOwnProperty(key)) continue;
+            _this.settings[key] = settings[key];
+        }
+    } catch(e) {
+        console.log(e);
+    }
+};
+
+/**
+ * Debug enabled?
+ * @returns {boolean}
+ */
+CanopyEnhancer.prototype.debugMessages = function() {
+    if (this.settings.cge_debug === 1) {
         return true;
     }
     return false;
@@ -311,32 +431,13 @@ CanopyEnhancer.prototype.isCanopy = function() {
  */
 CanopyEnhancer.prototype.enhancedCSS = function() {
     if (this.settings.cge_custom_css === 1) {
-        var path;
-        var head = document.getElementsByTagName('head')[0];
-        var styleNum = document.getElementsByTagName('link').length - 1;
-
-        path = chrome.extension.getURL('css/bootstrap-mini.css');
-        document.getElementsByTagName('link')[styleNum].insertAdjacentHTML(
-            'afterend',
-            '<link rel="stylesheet" type="text/css" href="'+path+'" />'
-        );
-        if (this.debug === true) {
-            console.log("Added bootstrap-mini.css");
-        }
-
-        path = chrome.extension.getURL('css/gui.css');
-        document.getElementsByTagName('link')[styleNum+1].insertAdjacentHTML(
-            'afterend',
-            '<link rel="stylesheet" type="text/css" href="'+path+'" />'
-        );
-        if (this.debug === true) {
-            console.log("Added gui.css");
-        }
-
         // Change submit buttons
         var allInputSubmit = document.querySelectorAll('input[type="submit"]');
         for (var i = 0;i < allInputSubmit.length;i++) {
             allInputSubmit[i].className = 'btn btn-sm btn-cambium';
+        }
+        if (document.getElementById('loginbutton')) {
+            document.getElementById('loginbutton').className = 'btn btn-sm btn-default';
         }
     }
 };
@@ -390,57 +491,44 @@ CanopyEnhancer.prototype.getCurrentPageName = function() {
     }
 };
 
-/**
- * Get WebPage Auto Update setting
- */
-CanopyEnhancer.prototype.getRefreshTime = function() {
-    var bodyOnload = document.getElementsByTagName('body')[0].getAttribute('onload');
-    var match = bodyOnload.match(/handleLoad\(([0-9]+)\,.*/);
-    if (match[1]) {
-        this.refreshTime = match[1];
-        this.intervalsTimeout = (this.refreshTime * 1000) + 1;
-    } else {
-        this.refreshTime = 0;
-    }
-};
-
 /** ======================================================================
  *  =RealTimeTraffic
  ** ======================================================================*/
+
+
+CanopyEnhancer.prototype.isTrafficPage = function() {
+    if ((this.currentCatIndex == 2 && this.currentPageIndex == 7) || (this.currentCatIndex == 2 && this.currentPageIndex == 9)) {
+        return true;
+    }
+    return false;
+};
 
 /**
  * Display realtime traffic
  */
 CanopyEnhancer.prototype.realTimeTraffic = function() {
     var _this = this;
-    if ((this.currentCatIndex == 2 && this.currentPageIndex == 7) || (this.currentCatIndex == 2 && this.currentPageIndex == 9)) {
-
+    if (_this.isTrafficPage()) {
         var sectionTitle = this.Sections[this.currentCatIndex].pages[this.currentPageIndex];
-        var mainBlockID, inTrafficBlock, outTrafficBlock;
+
         if (this.currentPageIndex == 7) {
-            mainBlockID = document.getElementById('SectionEthernet');
-            inTrafficBlock = document.getElementById('FecCb_ifmib_ifInOctets');
-            outTrafficBlock = document.getElementById('FecCb_ifmib_ifOutOctets');
+            this.mainTrafficBlockID = document.getElementById('SectionEthernet');
+            this.inTrafficID = 'FecCb_ifmib_ifInOctets';
+            this.outTrafficID = 'FecCb_ifmib_ifOutOctets';
         } else {
-            mainBlockID = document.getElementById('SectionRFCBStat');
-            inTrafficBlock = document.getElementById('RfCb_ifmib_ifInOctets');
-            outTrafficBlock = document.getElementById('RfCb_ifmib_ifOutOctets');
+            this.mainTrafficBlockID = document.getElementById('SectionRFCBStat');
+            this.inTrafficID = 'RfCb_ifmib_ifInOctets';
+            this.outTrafficID = 'RfCb_ifmib_ifOutOctets';
         }
+
+        this.SetUpAJAX();
 
         if ((this.refreshTime > 0)) {
 
-            var prevInTraffic = parseInt(inTrafficBlock.innerText);
-            prevInTraffic = prevInTraffic.byte2Mbit();
-            prevInTraffic = prevInTraffic.round2();
-
-            var prevOutTraffic = parseInt(outTrafficBlock.innerText);
-            prevOutTraffic = prevOutTraffic.byte2Mbit();
-            prevOutTraffic = prevOutTraffic.round2();
-
             // Spawn graph block
-            if (_this.settings.cge_rtt_type === 'graph') {
+            if (this.settings.cge_rtt_type === 'graph') {
 
-                mainBlockID.insertAdjacentHTML(
+                this.mainTrafficBlockID.insertAdjacentHTML(
                     'beforebegin',
                     '<div class="section" id="SectionRTGTraffic">' +
                     '<h2 class="sectiontitle"><span class="sectiontitletext">'+sectionTitle+' Real Time Traffic</span><span class="MenuBar" style="float: right;"><img class="MenuImg" src="_min.gif?mac_esn=' + this.currentRadioMAC.toLocaleLowerCase() + '" style="cursor: pointer; margin-right: 5px;"></span></h2>' +
@@ -540,53 +628,8 @@ CanopyEnhancer.prototype.realTimeTraffic = function() {
                 };
 
                 var ctx = document.getElementById("RTGChart").getContext("2d");
-                var realTimeTrafficChart = new Chart(ctx).Line(chartData, chartOpt);
-                document.getElementById('RTGLegend').innerHTML = realTimeTrafficChart.generateLegend();
-
-                // Updating graph
-                setInterval(function () {
-
-                    var tmpTime = new Date();
-                    var timestring = tmpTime.getHours().leadingZero() + ':'+tmpTime.getMinutes().leadingZero()+':'+tmpTime.getSeconds().leadingZero();
-
-                    var currInTraffic = parseInt(inTrafficBlock.innerText);
-                    currInTraffic = currInTraffic.byte2Mbit();
-                    currInTraffic = currInTraffic.round2();
-
-                    var currOutTraffic = parseInt(outTrafficBlock.innerText);
-                    currOutTraffic = currOutTraffic.byte2Mbit();
-                    currOutTraffic = currOutTraffic.round2();
-
-                    var inTrafficDiff = currInTraffic - prevInTraffic;
-                    var outTrafficDiff = currOutTraffic - prevOutTraffic;
-
-
-                    var inTrafficAdd, outTrafficAdd;
-                    if (inTrafficDiff > 0) {
-                        inTrafficAdd = ((inTrafficDiff / _this.refreshTime).round2());
-                    } else {
-                        inTrafficAdd = 0;
-                    }
-
-                    if (outTrafficDiff > 0) {
-                        outTrafficAdd = ((outTrafficDiff / _this.refreshTime).round2());
-                    } else {
-                        outTrafficAdd = 0;
-                    }
-
-                    inTrafficAdd = inTrafficAdd.toFixed(2);
-                    outTrafficAdd = outTrafficAdd.toFixed(2);
-
-                    realTimeTrafficChart.addData([inTrafficAdd, outTrafficAdd], timestring);
-                    realTimeTrafficChart.removeData();
-
-                    document.getElementById('legend-InterfaceTrafficIn').innerHTML = inTrafficAdd;
-                    document.getElementById('legend-InterfaceTrafficOut').innerHTML = outTrafficAdd;
-
-                    prevInTraffic = currInTraffic;
-                    prevOutTraffic = currOutTraffic;
-
-                }, this.intervalsTimeout);
+                this.realTimeTrafficChart = new Chart(ctx).Line(chartData, chartOpt);
+                document.getElementById('RTGLegend').innerHTML = this.realTimeTrafficChart.generateLegend();
 
             } else {
 
@@ -594,47 +637,72 @@ CanopyEnhancer.prototype.realTimeTraffic = function() {
                 el.id = 'cge-CurrInTraffic-wrap';
                 el.className = 'cge-real-time-throughput cge-color-blue-cambium';
                 el.innerHTML = ' (<span id="cge-CurrInTraffic">0.00</span> Mbps)</span>';
-                inTrafficBlock.parentNode.insertBefore(el, inTrafficBlock.nextSibling);
+                document.getElementById(this.inTrafficID).parentNode.insertBefore(
+                    el,
+                    document.getElementById(this.inTrafficID).nextSibling
+                );
 
                 el = document.createElement("span");
                 el.id = 'cge-CurrOutTraffic-wrap';
                 el.className = 'cge-real-time-throughput cge-color-blue-cambium';
                 el.innerHTML = ' (<span id="cge-CurrOutTraffic">0.00</span> Mbps)';
-                outTrafficBlock.parentNode.insertBefore(el, outTrafficBlock.nextSibling);
-
-                setInterval(function () {
-
-                    var currInTraffic = parseInt(inTrafficBlock.innerText);
-                    currInTraffic = currInTraffic.byte2Mbit();
-                    currInTraffic = currInTraffic.round2();
-
-                    var currOutTraffic = parseInt(outTrafficBlock.innerText);
-                    currOutTraffic = currOutTraffic.byte2Mbit();
-                    currOutTraffic = currOutTraffic.round2();
-
-                    var inTrafficDiff = currInTraffic - prevInTraffic;
-                    var outTrafficDiff = currOutTraffic - prevOutTraffic;
-
-                    if (inTrafficDiff > 0) {
-                        document.getElementById('cge-CurrInTraffic').innerHTML = ((inTrafficDiff / _this.refreshTime).round2()).toFixed(2);
-                    }
-
-                    if (outTrafficDiff > 0) {
-                        document.getElementById('cge-CurrOutTraffic').innerHTML = ((outTrafficDiff / _this.refreshTime).round2()).toFixed(2);
-                    }
-
-                    prevInTraffic = currInTraffic;
-                    prevOutTraffic = currOutTraffic;
-
-                }, this.intervalsTimeout);
-
+                document.getElementById(this.outTrafficID).parentNode.insertBefore(
+                    el,
+                    document.getElementById(this.outTrafficID).nextSibling
+                );
             }
         } else {
-            mainBlockID.insertAdjacentHTML(
+            this.mainTrafficBlockID.insertAdjacentHTML(
                 'beforebegin',
                 '<div class="cge-error">Set Webpage Auto Update > 0 for real time throughput (Configuration => General)</div>'
             );
         }
+    }
+};
+
+/**
+ * Updates traffic data from webpage
+ */
+CanopyEnhancer.prototype.updateTrafficData = function (currInOctets, currOutOctets) {
+    currInOctets = parseInt(currInOctets);
+    currOutOctets = parseInt(currOutOctets);
+
+    if (this.trafficData.started) {
+
+        this.trafficData.inTraffic = ((currInOctets - this.trafficData.prevInOctets) / this.refreshTime).byte2Mbit().round2().toFixed(2);
+        this.trafficData.outTraffic = ((currOutOctets - this.trafficData.prevOutOctets) / this.refreshTime).byte2Mbit().round2().toFixed(2);
+
+        this.trafficData.prevInOctets = currInOctets;
+        this.trafficData.prevOutOctets = currOutOctets;
+
+        /**
+         * UPDATE GUI
+         */
+        if (this.settings.cge_rtt_type == 'graph') {
+            var tmpTime = new Date();
+            var timestring = tmpTime.getHours().leadingZero() + ':'+tmpTime.getMinutes().leadingZero()+':'+tmpTime.getSeconds().leadingZero();
+
+            this.realTimeTrafficChart.addData(
+                [this.trafficData.inTraffic, this.trafficData.outTraffic],
+                timestring
+            );
+            this.realTimeTrafficChart.removeData();
+
+            document.getElementById('legend-InterfaceTrafficIn').innerHTML = this.trafficData.inTraffic.toString();
+            document.getElementById('legend-InterfaceTrafficOut').innerHTML = this.trafficData.outTraffic.toString();
+        } else {
+            document.getElementById('cge-CurrInTraffic').innerHTML = this.trafficData.inTraffic.toString();
+            document.getElementById('cge-CurrOutTraffic').innerHTML = this.trafficData.outTraffic.toString();
+        }
+
+    } else {
+        this.trafficData.prevInOctets = currInOctets;
+        this.trafficData.inTraffic = 0;
+
+        this.trafficData.prevOutOctets = currOutOctets;
+        this.trafficData.outTraffic = 0;
+
+        this.trafficData.started = true;
     }
 };
 
@@ -671,7 +739,7 @@ CanopyEnhancer.prototype.extractAPEvaluationData = function() {
         this.currentSessionStatus = tmpFirstRowMatch[1];
     }
 
-    if (this.debug === true) {
+    if (this.debugMessages() === true) {
         console.log("AP Selection Method: " + this.apSelectionMethod);
         console.log("Current eval entry: " + this.currentEvaluatinEntry);
         console.log("Session status: " + this.currentSessionStatus);
@@ -806,7 +874,7 @@ CanopyEnhancer.prototype.renderBetterEvaluationTemplate = function() {
  * Initialize better evaluation
  */
 CanopyEnhancer.prototype.betterEvaluation = function() {
-    if (this.apEvaluationBlock != null) {
+    if (this.apEvaluationBlock != null && this.settings.cge_ap_evaluation) {
         if (this.APEvaluationFields[this.currentRadioType] != 'undefined') {
             if (this.extractAPEvaluationData()) {
                 if (this.refreshTime > 0) {
@@ -842,17 +910,12 @@ CanopyEnhancer.prototype.MACLookUp = function(block) {
     block.classList.add('cge-highlight');
 
     if (macaddress.isMAC()) {
-        var request = new XMLHttpRequest();
-        request.open('GET', 'https://macvendors.co/api/' + macaddress, true);
-        request.onload = function () {
-            var attrContent;
-            if (request.status >= 200 && request.status < 400) {
-                // Success!
-                var data = JSON.parse(request.responseText);
-                if (_this.debug === true) {
+        jsonp('https://macvendors.co/api/jsonp/'+macaddress, function(data) {
+            if (data.result !== undefined) {
+                if (_this.debugMessages() === true) {
                     console.log(data);
                 }
-                if (data.result.error == undefined) {
+                if (data.result.error === undefined) {
                     attrContent = "Company: " + data.result.company + "\n\n";
                     attrContent += "MAC Prefix: " + data.result.mac_prefix + "\n\n";
                     attrContent += "Address: " + data.result.address;
@@ -860,19 +923,13 @@ CanopyEnhancer.prototype.MACLookUp = function(block) {
                 } else {
                     attrContent = "Error, no result";
                 }
-            } else {
-                // Error
-                attrContent = "Error, no result";
+                _this.tooltipMACNode.innerHTML = attrContent;
+                _this.tooltipMACNode.style.display = 'block';
+                var tooltipRect = _this.tooltipMACNode.getBoundingClientRect();
+                _this.tooltipMACNode.style.top = ( (blockRect.top + document.body.scrollTop) - (tooltipRect.height) - 5) + "px";
+                _this.tooltipMACNode.style.left = (blockRect.left - (blockRect.width / 2) + (tooltipRect.width / 2))+ "px";
             }
-            _this.tooltipMACNode.innerHTML = attrContent;
-            _this.tooltipMACNode.style.display = 'block';
-            var tooltipRect = _this.tooltipMACNode.getBoundingClientRect();
-            _this.tooltipMACNode.style.top = ( (blockRect.top + document.body.scrollTop) - (tooltipRect.height) - 5) + "px";
-            _this.tooltipMACNode.style.left = (blockRect.left - (blockRect.width / 2) + (tooltipRect.width / 2))+ "px";
-        };
-        request.onerror = function () {};
-
-        request.send();
+        });
     } else {
         _this.tooltipMACNode.style.display = 'none';
         block.classList.remove('cge-highlight');
@@ -917,45 +974,6 @@ CanopyEnhancer.prototype.ARPPageMacLookup = function() {
     }
 };
 
-/**
- * Add special tags to all MAC Addresses (not used)
- *
- * @param block_id
- */
-CanopyEnhancer.prototype.addTagToMACAddresses = function(block_id) {
-
-    var innerText = document.getElementById(block_id).innerHTML;
-    var newText = "";
-    var i = -1;
-    var lcinnerText = innerText.toLowerCase();
-
-    while (innerText.length > 0) {
-        i = lcinnerText.regexIndexOf(/(([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2}))/, i + 1);
-        if (i < 0) {
-            newText += innerText;
-            innerText = "";
-        } else {
-            // skip anything inside an HTML tag
-            if (innerText.lastIndexOf(">", i) >= innerText.lastIndexOf("<", i)) {
-                // skip anything inside a <script> block
-                if (lcinnerText.lastIndexOf("/script>", i) >= lcinnerText.lastIndexOf("<script", i)) {
-                    newText += innerText.substring(0, i);
-                    // Start tag
-                    newText += '<span class="'+this.MACLookUpClass+'">';
-                    // MAC Address
-                    newText += innerText.substr(i, 17);
-                    // End Tag
-                    newText += "</span>";
-                    innerText = innerText.substr(i + 17);
-                    lcinnerText = innerText.toLowerCase();
-                    i = -1;
-                }
-            }
-        }
-    }
-    document.getElementById(block_id).innerHTML = newText;
-};
-
 /** ======================================================================
  *  =NAT Table
  ** ======================================================================*/
@@ -963,7 +981,6 @@ CanopyEnhancer.prototype.addTagToMACAddresses = function(block_id) {
 /**
  * IP Lookup
  *
- * @param ip
  * @param block
  * @constructor
  */
@@ -974,22 +991,21 @@ CanopyEnhancer.prototype.IPLookUp = function(block) {
     block.classList.add('cge-highlight');
     if (ip.isValidPubIP()) {
         var request = new XMLHttpRequest();
-        request.open('GET', 'http://ip-api.com/json/' + ip, true);
+        request.open('GET', 'http://ipinfo.io/' + ip+'/json', true);
         request.onload = function () {
             var attrContent;
             if (request.status >= 200 && request.status < 400) {
                 // Success!
                 var data = JSON.parse(request.responseText);
-                if (_this.debug === true) {
+                if (_this.debugMessages() === true) {
                     console.log(data);
                 }
-                if (data.status == 'success') {
-                    attrContent = "AS: " + data.as + "<br />";
-                    attrContent += "Country: " + data.country + " ("+ data.countryCode +")<br />";
-                    attrContent += "Region: " + data.regionName+ "<br />";
+                if (data.ip !== 'undefined') {
+                    attrContent = "AS: " + data.org + "<br />";
+                    attrContent += "Country: " + data.country +"<br />";
+                    attrContent += "Region: " + data.region+ "<br />";
                     attrContent += "City: " + data.city+ "<br />";
-                    attrContent += "ISP: " + data.isp;
-
+                    attrContent += "Hostname: " + data.hostname;
                 } else {
                     attrContent = "Error, no result";
                 }
@@ -1048,39 +1064,10 @@ CanopyEnhancer.prototype.NATTable = function() {
     }
 };
 
-/**
- * Add special tag to IP Addresses for lookup (not used)
- * @param block_id
- */
-CanopyEnhancer.prototype.addTagToIPAddresses = function(block_id) {
-    var innerText = document.getElementById(block_id).innerHTML;
-    var newText = "";
-    var i = -1;
-    var lcinnerText = innerText.toLowerCase();
-
-    while (innerText.length > 0) {
-        i = lcinnerText.regexIndexOf(/((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))/, i + 1);
-        if (i < 0) {
-            newText += innerText;
-            innerText = "";
-        } else {
-            // skip anything inside an HTML tag
-            if (innerText.lastIndexOf(">", i) >= innerText.lastIndexOf("<", i)) {
-                // skip anything inside a <script> block
-                if (lcinnerText.lastIndexOf("/script>", i) >= lcinnerText.lastIndexOf("<script", i)) {
-                    newText += innerText.substring(0, i);
-                    // Start tag
-                    newText += '<span class="'+this.IPLookUpClass+'">';
-                    // MAC Address
-                    newText += innerText.substr(i, 15);
-                    // End Tag
-                    newText += "</span>";
-                    innerText = innerText.substr(i + 15);
-                    lcinnerText = innerText.toLowerCase();
-                    i = -1;
-                }
-            }
-        }
-    }
-    document.getElementById(block_id).innerHTML = newText;
-};
+var CGE;
+CGE = new CanopyEnhancer();
+if(document.readyState === "complete") {
+    CGE.initialize();
+} else {
+    document.addEventListener('DOMContentLoaded', CGE.initialize);
+}

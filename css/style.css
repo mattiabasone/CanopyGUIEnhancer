@@ -101,6 +101,10 @@ body {
     padding: 5px;
 }
 
+#cge-popup-infobox {
+    padding:10px;
+}
+
 /** =tooltip **/
 .cge-tooltip {
     display: none;

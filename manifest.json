@@ -4,7 +4,8 @@
   "name": "CanopyGUIEnhancer",
   "short_name": "CGE",
   "description": "This extension enhance the standard CambiumNetworks Canopy Web GUI",
-  "version": "1.4.2",
+  "version": "1.5",
+  "version_name": "1.5",
   "author": "Mattia Basone <mattia.basone@gmail.com>",
 
   "browser_action": {
@@ -26,14 +27,13 @@
         "https://*/*"
       ],
       "js": [
-        "lib/Chart.min.js",
-        "utils.js",
-        "CanopyEnhancer.js",
         "background.js"
       ],
-      "run_at": "document_end"
+      "run_at": "document_idle"
     }],
   "web_accessible_resources":[
+    "utils.js",
+    "CanopyEnhancer.js",
     "lib/Chart.min.js",
     "css/bootstrap-mini.css",
     "css/gui.css",

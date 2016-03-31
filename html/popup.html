@@ -4,7 +4,6 @@
     <link rel="stylesheet" type="text/css" href="../css/bootstrap-mini.css" />
     <link rel="stylesheet" type="text/css" href="../css/style.css" />
     <script src="../js/popup.js"></script>
-    <script src="../CanopyEnhancer.js"></script>
 </head>
 <body id="cge_popup_body">
 <div id="cge_popup_wrapper">
@@ -33,11 +32,21 @@
             </div>
 
             <div class="form-group">
+                <label for="cge_ap_evaluation">Enable AP Eval parsing</label>
+                <input id="cge_ap_evaluation" type="checkbox" value="1" name="cge_ap_evaluation" />
+            </div>
+
+            <div class="form-group">
                 <label for="cge_rtt_type">How to display real time traffic</label>
                 <select name="cge_rtt_type" id="cge_rtt_type">
                     <option value="string" selected>String</option>
                     <option value="graph">Graph</option>
                 </select>
+            </div>
+
+            <div class="form-group">
+                <label for="cge_debug">Enable Console Debug</label>
+                <input id="cge_debug" type="checkbox" value="1" name="cge_debug" />
             </div>
 
             <hr />
@@ -48,6 +57,9 @@
 
         </fieldset>
     </form>
+    <div id="cge-popup-infobox" class="text-center">
+        <a href="https://github.com/mattiabasone/CanopyGUIEnhancer/issues" target="_blank" class="btn btn-sm btn-default">Report a problem</a>
+    </div>
 </div>
 </body>
 </html>

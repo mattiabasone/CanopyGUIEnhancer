@@ -19,6 +19,7 @@
     background-image: none;
     border: 1px solid transparent;
     border-radius: 2px;
+    text-decoration: none;
 }
 
 .btn-sm {
@@ -39,6 +40,18 @@ table {
     border-spacing: 0;
     border-collapse: collapse;
     margin-bottom: 5px;
+}
+
+table tr.dualitem:first-child {
+    border-top:none;
+}
+
+tr.dualitem {
+    border-top: 1px solid #d0d0d0;
+}
+tr.dualitem td {
+    padding-top:2px;
+    padding-bottom: 2px;
 }
 
 .table {
@@ -67,7 +80,7 @@ table {
     padding: 8px;
     line-height: 1.42857143;
     vertical-align: top;
-    border-top: 1px solid #ddd;
+    border-top: 1px solid #e0e0e0;
 }
 .table > thead > tr > th {
     vertical-align: bottom;
