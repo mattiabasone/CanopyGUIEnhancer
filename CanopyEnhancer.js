@@ -12,6 +12,7 @@ var CanopyEnhancer = function() {
         cge_ip_lookup: 1,
         cge_mac_lookup: 1,
         cge_ap_evaluation: 1,
+        cge_ap_throughput: 1,
         cge_rtt_type: 'string',
         cge_debug : 0
     };
@@ -45,6 +46,14 @@ var CanopyEnhancer = function() {
     this.currentEvaluatinEntry = -1;
     this.currentSessionStatus = "";
 
+    /**
+     * AP SM Throughput
+     */
+    this.APThroughputSM = {};
+
+    /**
+     * Sections
+     */
     this.Sections = [];
     this.Sections[0] = {
         name: "Home",
@@ -64,6 +73,7 @@ var CanopyEnhancer = function() {
         pages: {
             7: "Ethernet",
             9: "Radio",
+            12: "Throughput",
             15: "NAT DHCP",
             20: "ARP"
         }
@@ -276,6 +286,7 @@ CanopyEnhancer.prototype.initialize = function() {
         _this.betterEvaluation();
         _this.ARPPageMacLookup();
         _this.NATTable();
+        _this.APThroughput();
     }
 };
 
@@ -369,6 +380,9 @@ CanopyEnhancer.prototype.SetUpAJAX = function() {
                                         }
                                     }
                                 }
+                            }
+                            if (_this.isAPThroughputPage()) {
+                                _this.APThroughputCalc();
                             }
                         }
                     } else if (request.status == 401) {
@@ -658,6 +672,10 @@ CanopyEnhancer.prototype.realTimeTraffic = function() {
             );
         }
     }
+};
+
+CanopyEnhancer.prototype.calcPerSeconds = function(current, previous) {
+    return ((current - previous) / this.refreshTime);
 };
 
 /**
@@ -1061,6 +1079,99 @@ CanopyEnhancer.prototype.NATTable = function() {
         document.getElementsByTagName("body")[0].appendChild(this.tooltipIPNode);
         // Listeners
         this.addIPLookUpListener('#page');
+    }
+};
+
+/** ======================================================================
+ *  =AP Throughput page
+ ** ======================================================================*/
+
+CanopyEnhancer.prototype.isAPThroughputPage = function() {
+    if (this.currentCatIndex == 2 && this.currentPageIndex == 12) {
+        return true;
+    }
+    return false;
+};
+
+CanopyEnhancer.prototype.APThroughput = function() {
+    if (this.isAPThroughputPage() && this.settings.cge_ap_throughput == 1) {
+        this.SetUpAJAX();
+    }
+};
+
+CanopyEnhancer.prototype.APThroughputCalc = function() {
+    var table = document.getElementById('LuidOLtable');
+    var tbody = table.querySelector('tbody');
+    var rows = tbody.querySelectorAll('tr');
+    var totalInTraffic = 0;
+    var totalOutTraffic = 0;
+    if (rows.length > 0) {
+        table.querySelector('thead tr:nth-child(1) th:nth-child(3)').setAttribute('colspan', 12);
+        table.querySelector('thead tr:nth-child(2) th:nth-child(1)').setAttribute('colspan', 6);
+        table.querySelector('thead tr:nth-child(2) th:nth-child(2)').setAttribute('colspan', 6);
+        table.querySelector('thead tr:nth-child(3) th:nth-child(1)').insertAdjacentHTML('afterend', '<th>traffic (Mbps)</th>');
+        table.querySelector('thead tr:nth-child(3) th:nth-child(6)').insertAdjacentHTML('afterend', '<th>traffic (Mbps)</th>');
+        for(var i = 0; i <  rows.length; i++) {
+            var LUID = parseInt(rows[i].querySelector('td:nth-child(2)').innerText);
+            if (LUID < 255) {
+                var InTraffic, OutTraffic, InPPS, OutPPS;
+                var currInOctets = parseInt(rows[i].querySelector('td:nth-child(3)').innerText);
+                var currOutOctets = parseInt(rows[i].querySelector('td:nth-child(8)').innerText);
+
+                var currInPackets = parseInt(rows[i].querySelector('td:nth-child(4)').innerText);
+                var currOutPackets = parseInt(rows[i].querySelector('td:nth-child(9)').innerText);
+
+                if (this.APThroughputSM[LUID] !== undefined) {
+                    /**
+                     * IN
+                     */
+                    // traffic
+                    InTraffic = this.calcPerSeconds(currInOctets, this.APThroughputSM[LUID].prevInOctets);
+                    this.APThroughputSM[LUID].prevInOctets = currInOctets;
+                    // packets
+                    InPPS = this.calcPerSeconds(currInPackets, this.APThroughputSM[LUID].prevInPackets);
+                    InPPS = Math.round(InPPS);
+                    this.APThroughputSM[LUID].prevInPackets = currInPackets;
+
+                    /**
+                     * OUT
+                     */
+                    // traffic
+                    OutTraffic = this.calcPerSeconds(currOutOctets, this.APThroughputSM[LUID].prevOutOctets);
+                    this.APThroughputSM[LUID].prevOutOctets = currOutOctets;
+                    // packets
+                    OutPPS = this.calcPerSeconds(currOutPackets, this.APThroughputSM[LUID].prevOutPackets);
+                    OutPPS = Math.round(OutPPS);
+                    this.APThroughputSM[LUID].prevOutPackets = currOutPackets;
+
+                } else {
+                    this.APThroughputSM[LUID] = {
+                        prevInOctets: currInOctets,
+                        prevInPackets: currInPackets,
+                        prevOutOctets: currOutOctets,
+                        prevOutPackets: currOutPackets
+                    };
+                    InTraffic = 0;
+                    OutTraffic = 0;
+                    InPPS = 0;
+                    OutPPS = 0;
+                }
+                totalInTraffic = totalInTraffic + InTraffic;
+                totalOutTraffic = totalOutTraffic + OutTraffic;
+
+                InTraffic = InTraffic.byte2Mbit().toFixed(2);
+                OutTraffic = OutTraffic.byte2Mbit().toFixed(2);
+
+                rows[i].querySelector('td:nth-child(4)').innerHTML += " <b class=\"cge-color-blue-cambium\">("+InPPS+" pps)</b>";
+                rows[i].querySelector('td:nth-child(9)').innerHTML += " <b class=\"cge-color-blue-cambium\">("+OutPPS+" pps)</b>";
+
+                rows[i].querySelector('td:nth-child(3)').insertAdjacentHTML('afterend', '<td class="cge-highlight">'+InTraffic+'</td>');
+                rows[i].querySelector('td:nth-child(8)').insertAdjacentHTML('afterend', '<td class="cge-highlight">'+OutTraffic+'</td>');
+            } else {
+                rows[i].querySelector('td:nth-child(3)').insertAdjacentHTML('afterend', '<td></td>');
+                rows[i].querySelector('td:nth-child(8)').insertAdjacentHTML('afterend', '<td></td>');
+            }
+        }
     }
 };
 

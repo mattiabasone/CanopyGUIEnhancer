@@ -10,10 +10,17 @@ h2.sectiontitle {
     margin-bottom: 5px;
 }
 
+/** =menu **/
+a.menu {
+    list-style-image: none;
+}
+
 /** =tabs **/
 a.tab {
+    font-size: 13px;
+    font-weight: 500;
     padding-bottom: 1px;
-    border: 2px solid white;
+    border: 2px solid #F0F0F0 !important;
     border-bottom: none;
     border-radius: 2px 2px 0 0;
     -moz-border-radius: 2px 2px 0 0;
@@ -22,11 +29,15 @@ a.tab {
 }
 
 a.tab:hover {
+    color: rgb(0, 61, 121);
     padding-bottom: 1px;
     border-bottom:none;
+    background-color: #F0F0F0;
 }
 
 a#tabbed {
+    font-size: 13px;
+    font-weight: 500;
     border-bottom:none;
     background-color: #F0F0F0;
 }
@@ -88,7 +99,6 @@ tr.dualitem:hover, table.section .tablewrapper:hover, body#uploadpage {
 }
 
 /** =buttons **/
-
 .btn-cambium {
     color: #FAFAFA;
     background-color: #003D79;
@@ -99,4 +109,14 @@ tr.dualitem:hover, table.section .tablewrapper:hover, body#uploadpage {
     color: #FAFAFA;
     background-color: #002a56;
     border-color: #00152b;
+}
+
+/* =AP Throughput */
+#LuidOLtable tbody tr td {
+    text-align: center;
+    height: 39px;
+}
+#LuidOLtable tbody tr td:first-child {
+    text-align: left;
+    max-width: 580px;
 }

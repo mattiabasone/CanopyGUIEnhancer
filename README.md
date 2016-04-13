@@ -1,4 +1,4 @@
-CanopyGUIEnhancer (Chrome Extension)
+Canopy GUI Enhancer - Chrome Extension
 ==========
 
 This extension enhance the standard CambiumNetworks Canopy Web GUI (tested on PMP100 PMP430 and PMP450)
@@ -23,6 +23,18 @@ The extension has been tested on the following software versions, with old versi
 
 ## Changelog
 
+### Version 1.6
+
+* Added per-SM traffic and packets per seconds in the AP -> Statistics -> Throughput page
+
+### Version 1.5
+
+* Improved stats update
+* Added setting for AP Evaluation parsing
+* Changed ip-api.com with ipinfo.io for IP addresses lookup (whois)
+* Small CSS changes
+* [Bugfix] macvendors.co requests didn't work without jsonp
+
 ### Version 1.4
 
 * Added graphs for real time traffic representation
@@ -43,7 +55,7 @@ The extension has been tested on the following software versions, with old versi
 * Renamed some CSS classes
 * Removed unused CSS classes
 
-### 1.1
+### Version 1.1
 
 * Small Bug fixes
 

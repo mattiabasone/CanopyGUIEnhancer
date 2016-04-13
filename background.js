@@ -19,6 +19,7 @@ chrome.storage.local.get(null, function (data) {
                     cge_mac_lookup: 1,
                     cge_rtt_type: 'string',
                     cge_ap_evaluation: 1,
+                    cge_ap_throughput: 1,
                     cge_debug: 0
                 };
                 chrome.storage.local.set(settingsObj);

@@ -1,4 +1,13 @@
-var formFields = ['cge_enabled', 'cge_custom_css', 'cge_ip_lookup', 'cge_mac_lookup', 'cge_rtt_type', 'cge_ap_evaluation', 'cge_debug'];
+var formFields = [
+    'cge_enabled',
+    'cge_custom_css',
+    'cge_ip_lookup',
+    'cge_mac_lookup',
+    'cge_rtt_type',
+    'cge_ap_evaluation',
+    'cge_ap_throughput',
+    'cge_debug'
+];
 
 chrome.storage.local.get(null, function(data) {
 
@@ -17,7 +26,7 @@ chrome.storage.local.get(null, function(data) {
             var settingsInput = document.getElementById(key);
             switch (settingsInput.type) {
                 case 'checkbox':
-                    if (data[key] === 1) {
+                    if (data[key] === 1 || data[key] === undefined) {
                         settingsInput.checked = true;
                     } else {
                         settingsInput.checked = false;

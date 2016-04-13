@@ -7,10 +7,9 @@
 </head>
 <body id="cge_popup_body">
 <div id="cge_popup_wrapper">
-    <form id="cge_form_settings" name="cge_form_settings">
-        <fieldset>
-            <legend>Settings</legend>
-
+    <div id="cge_form_wrapper">
+        <form id="cge_form_settings" name="cge_form_settings">
+            <h3>Canopy GUI Enhancer settings</h3>
             <div class="form-group">
                 <label for="cge_enabled">Enable Canopy GUI Enhancer</label>
                 <input id="cge_enabled" type="checkbox" value="1" name="cge_enabled" />
@@ -37,6 +36,11 @@
             </div>
 
             <div class="form-group">
+                <label for="cge_ap_throughput">Enable AP Throughput Page parsing</label>
+                <input id="cge_ap_throughput" type="checkbox" value="1" name="cge_ap_throughput" />
+            </div>
+
+            <div class="form-group">
                 <label for="cge_rtt_type">How to display real time traffic</label>
                 <select name="cge_rtt_type" id="cge_rtt_type">
                     <option value="string" selected>String</option>
@@ -54,9 +58,8 @@
             <div class="form-group text-center">
                 <button class="btn btn-sm btn-default" type="submit" value="1" name="go">Save Changes</button>
             </div>
-
-        </fieldset>
-    </form>
+        </form>
+    </div>
     <div id="cge-popup-infobox" class="text-center">
         <a href="https://github.com/mattiabasone/CanopyGUIEnhancer/issues" target="_blank" class="btn btn-sm btn-default">Report a problem</a>
     </div>

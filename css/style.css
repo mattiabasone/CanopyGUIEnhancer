@@ -72,24 +72,18 @@ body {
 }
 
 #cge_popup_wrapper {
-    padding: 10px;
+    padding: 15px;
 }
 
 #cge_form_settings {
     width: 350px;
 }
 
-#cge_form_settings legend {
-    font-size: 16px;
-    background-color: white;
-    border-radius: 0;
-    padding:0 10px 0 10px;
-}
-
-#cge_form_settings fieldset {
+#cge_form_wrapper {
     background-color: white;
     border:1px solid white;
     border-radius: 0;
+    padding: 5px;
 }
 
 #cge_form_settings hr {
