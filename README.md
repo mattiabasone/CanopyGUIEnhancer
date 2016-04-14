@@ -26,6 +26,8 @@ The extension has been tested on the following software versions, with old versi
 ### Version 1.6
 
 * Added per-SM traffic and packets per seconds in the AP -> Statistics -> Throughput page
+* Added conversion miles => kilometres in homepage
+* [Bugfix] In the AP Evaluation the "Beacon Power Level" entry isn't displayed on radio with software version < 14.1.1
 
 ### Version 1.5
 

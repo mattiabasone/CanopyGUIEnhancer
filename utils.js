@@ -22,6 +22,30 @@ Number.prototype.byte2Mbit = function() {
 };
 
 /**
+ *
+ * @returns {*}
+ */
+Number.prototype.formatDataUsage = function() {
+    var num;
+    if (this >= 1000000000000) {
+        num = Math.round(this / 1099511627776);
+        num = num + ' TB';
+    } else if (this >= 1000000000) {
+        num = Math.round(this / 1073741824);
+        num = num + ' GB';
+    } else if (this >= 1000000) {
+        num = Math.round(this / 1048576);
+        num = num + ' MB';
+    } else if (this >= 1000) {
+        num = Math.round(this / 1024);
+        num = num + ' KB';
+    } else {
+        num = Math.round(this) + ' Bytes';
+    }
+    return num;
+};
+
+/**
  * Round 2 dec
  *
  * @returns {number}

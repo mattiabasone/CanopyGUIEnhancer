@@ -20,7 +20,7 @@ var CanopyEnhancer = function() {
     this.currentCatIndex = -1;
     this.currentPageIndex = -1;
     this.currentRadioMAC = "000000000000";
-    this.currentRadioType = "MIMO_OFDM";
+    this.currentRadioModulation = "MIMO_OFDM";
 
     /**
      * Traffic
@@ -45,6 +45,7 @@ var CanopyEnhancer = function() {
     this.apSelectionMethod = "";
     this.currentEvaluatinEntry = -1;
     this.currentSessionStatus = "";
+    this.currentlyScanning = "";
 
     /**
      * AP SM Throughput
@@ -252,15 +253,18 @@ CanopyEnhancer.prototype.initialize = function() {
         var title = page.querySelector("h2");
         if (title !== null) {
             var titleString = title.innerText;
-            var resDevType = titleString.match(/.*GHz\s\-\sSubscriber\sModule\s\-\s([A-Fa-f0-9\-]{17})/);
+            var resDevType = titleString.match(/.*GHz\s\-\s([a-zA-Z\-\s]+)\s\-\s([A-Fa-f0-9\-]{17})/);
             if (resDevType != null) {
-                this.currentRadioType = 'FSK';
+                this.currentRadioModulation = 'FSK';
             } else {
-                resDevType = titleString.match(/.*GHz\sSISO\sOFDM\s\-\sSubscriber\sModule\s\-\s([A-Fa-f0-9\-]{17})/);
+                resDevType = titleString.match(/.*GHz\sSISO\sOFDM\s\-\s([a-zA-Z\-\s]+)\s\-\s([A-Fa-f0-9\-]{17})/);
                 if (resDevType != null) {
-                    this.currentRadioType = 'SISO_OFDM';
+                    this.currentRadioModulation = 'SISO_OFDM';
+                } else {
+                    resDevType = titleString.match(/.*GHz\sMIMO\sOFDM\s\-\s([a-zA-Z\-\s]+)\s\-\s([A-Fa-f0-9\-]{17})/);
                 }
             }
+            this.getDevType(resDevType[1]);
         } else {
             if (_this.debugMessages() === true) {
                 console.log("Title not found");
@@ -268,7 +272,8 @@ CanopyEnhancer.prototype.initialize = function() {
         }
 
         if (_this.debugMessages() === true) {
-            console.log("Current radio type: " + this.currentRadioType);
+            console.log("Current radio Modulation: " + this.currentRadioModulation);
+            console.log("Current radio Type: " + this.currentRadioType);
         }
 
         this.identifySection();
@@ -282,6 +287,7 @@ CanopyEnhancer.prototype.initialize = function() {
         }
 
         _this.enhancedCSS();
+        _this.homePage();
         _this.realTimeTraffic();
         _this.betterEvaluation();
         _this.ARPPageMacLookup();
@@ -301,6 +307,16 @@ CanopyEnhancer.prototype.getRefreshTime = function() {
         this.intervalsTimeout = (this.refreshTime * 1000) + 1;
     } else {
         this.refreshTime = 0;
+    }
+};
+
+CanopyEnhancer.prototype.getDevType = function(string) {
+    if (string === "Subscriber Module") {
+        this.currentRadioType = "SM";
+    } else if (string === "Access Point") {
+        this.currentRadioType = "AP";
+    } else {
+        this.currentRadioType = "BH";
     }
 };
 
@@ -380,6 +396,9 @@ CanopyEnhancer.prototype.SetUpAJAX = function() {
                                         }
                                     }
                                 }
+                            }
+                            if (_this.ishomePage()) {
+                                _this.homePageRender();
                             }
                             if (_this.isAPThroughputPage()) {
                                 _this.APThroughputCalc();
@@ -502,6 +521,51 @@ CanopyEnhancer.prototype.getCurrentPageName = function() {
         }
     } else {
         return "Unknown";
+    }
+};
+
+/** ======================================================================
+ *  =Homepage
+ ** ======================================================================*/
+
+/**
+ * E' la homepage?
+ * @returns {boolean}
+ */
+CanopyEnhancer.prototype.ishomePage = function() {
+    if (this.currentCatIndex == 0 && this.currentPageIndex == 1) {
+        return true;
+    }
+    return false;
+};
+
+/**
+ * Home render
+ */
+CanopyEnhancer.prototype.homePageRender = function () {
+
+    var linkStatus = document.getElementById("LinkStatus").innerText;
+    if (linkStatus !== '100Base-TX Full Duplex' && linkStatus !== '1000Base-T Full Duplex') {
+        document.getElementById("LinkStatus").innerHTML = ' <span class="cge-warning">'+document.getElementById("LinkStatus").innerHTML +'</span>'
+    }
+
+    var distanceBlock = document.getElementById('Distance');
+    if (distanceBlock !== null) {
+        var milesRegex = distanceBlock.innerText.match(/(([0-9]{1,2})\.([0-9]{0,3}))\smiles/);
+        if (milesRegex !== null) {
+            var km = parseFloat(milesRegex[1]) * 1.60934;
+            distanceBlock.innerText += ' - '+km.toFixed(3)+' kilometres';
+        }
+    }
+};
+
+/**
+ * Home page check
+ */
+CanopyEnhancer.prototype.homePage = function() {
+    if (this.ishomePage()) {
+        this.homePageRender();
+        this.SetUpAJAX();
     }
 };
 
@@ -734,7 +798,7 @@ CanopyEnhancer.prototype.updateTrafficData = function (currInOctets, currOutOcte
  */
 CanopyEnhancer.prototype.extractAPEvaluationData = function() {
     var rawAPEval = this.apEvaluationBlock.innerHTML;
-    var tmpAPEvalFields = this.APEvaluationFields[this.currentRadioType];
+    var tmpAPEvalFields = this.APEvaluationFields[this.currentRadioModulation];
 
     var regex = /<br\s*[\/]?>/gi;
     rawAPEval = rawAPEval.replace(regex, " ");
@@ -777,8 +841,17 @@ CanopyEnhancer.prototype.extractAPEvaluationData = function() {
 
             if (kplus < tmpAPEvalFields.length) {
                 var post_pattern = RegExp.quote(tmpAPEvalFields[kplus]);
+
+                // Fix for sw version < 14.1.1
+                if (post_pattern == 'Beacon Receive Power' && this.currentRadioModulation == 'MIMO_OFDM') {
+                    post_pattern += '(?:\\sLevel)?'
+                }
+
                 if (pre_pattern == 'RegFail') {
                     tmpRegexp = new RegExp(pre_pattern + " ([0-9]+).*" + post_pattern+"\:");
+                } else if (pre_pattern == 'Beacon Receive Power' && this.currentRadioModulation == 'MIMO_OFDM') {
+                    // Fix for sw version < 14.1.1
+                    tmpRegexp = new RegExp(pre_pattern + "(?:\\sLevel)?\:(.*)" + post_pattern);
                 } else {
                     tmpRegexp = new RegExp(pre_pattern + "\:(.*)" + post_pattern);
                 }
@@ -787,10 +860,17 @@ CanopyEnhancer.prototype.extractAPEvaluationData = function() {
                     tmpObj[pre_pattern] = tmpMatch[1].trimBlank();
                 }
             } else {
-                tmpRegexp = new RegExp(pre_pattern+"\:(.*)");
+                tmpRegexp = new RegExp(pre_pattern+"\:(.*)ms");
                 tmpMatch = tmpStr.match(tmpRegexp);
                 if (tmpMatch) {
-                    tmpObj[pre_pattern] = tmpMatch[1].trimBlank();
+                    tmpObj[pre_pattern] = tmpMatch[1].trimBlank()+' ms';
+                }
+                if ( (i+1 == splittedEval.length) && (this.currentSessionStatus == 'SCANNING')) {
+                    tmpRegexp = new RegExp(pre_pattern+"\:(?:.*)?Currently Scanning:\\s(.*)");
+                    tmpMatch = tmpStr.match(tmpRegexp);
+                    if (tmpMatch) {
+                        this.currentlyScanning = tmpMatch[1].trimBlank();
+                    }
                 }
             }
         }
@@ -816,10 +896,13 @@ CanopyEnhancer.prototype.renderBetterEvaluationTemplate = function() {
     }
 
     var evaluationContent = '';
-    evaluationContent += "<b>AP Selection Method:</b> "+this.apSelectionMethod+' - ';
+    evaluationContent += "<div class='betterEvaluationHead'> <b>AP Selection Method:</b> "+this.apSelectionMethod+' - ';
     evaluationContent += " <b>Current evaluation entry:</b> "+this.currentEvaluatinEntry+' - ';
     evaluationContent += " <b>Session status:</b> "+this.currentSessionStatus;
-    evaluationContent += "<hr /><br />";
+    if (this.currentSessionStatus == 'SCANNING') {
+        evaluationContent += " - <b>Currently Scanning:</b> "+this.currentlyScanning;
+    }
+    evaluationContent += "</div><hr /><br />";
 
     for(var i = 0;i<this.APEvaluationObj.length;i++) {
         var evalEntry = this.APEvaluationObj[i];
@@ -893,7 +976,7 @@ CanopyEnhancer.prototype.renderBetterEvaluationTemplate = function() {
  */
 CanopyEnhancer.prototype.betterEvaluation = function() {
     if (this.apEvaluationBlock != null && this.settings.cge_ap_evaluation) {
-        if (this.APEvaluationFields[this.currentRadioType] != 'undefined') {
+        if (this.APEvaluationFields[this.currentRadioModulation] != 'undefined') {
             if (this.extractAPEvaluationData()) {
                 if (this.refreshTime > 0) {
                     var _this = this;
@@ -906,8 +989,6 @@ CanopyEnhancer.prototype.betterEvaluation = function() {
                     this.renderBetterEvaluationTemplate();
                 }
             }
-        } else {
-
         }
     }
 };
@@ -1086,6 +1167,10 @@ CanopyEnhancer.prototype.NATTable = function() {
  *  =AP Throughput page
  ** ======================================================================*/
 
+/**
+ * Is the throughput page
+ * @returns {boolean}
+ */
 CanopyEnhancer.prototype.isAPThroughputPage = function() {
     if (this.currentCatIndex == 2 && this.currentPageIndex == 12) {
         return true;
@@ -1093,12 +1178,27 @@ CanopyEnhancer.prototype.isAPThroughputPage = function() {
     return false;
 };
 
+/**
+ * AP Throughput check
+ * @constructor
+ */
 CanopyEnhancer.prototype.APThroughput = function() {
     if (this.isAPThroughputPage() && this.settings.cge_ap_throughput == 1) {
-        this.SetUpAJAX();
+        if (this.refreshTime > 0) {
+            this.SetUpAJAX();
+        } else {
+            document.getElementById('SectionLUIDStats').insertAdjacentHTML(
+                'beforebegin',
+                '<div class="cge-error">Set Webpage Auto Update > 0 for real time stats (Configuration => General)</div>'
+            );
+        }
     }
 };
 
+/**
+ * AP Throughput calculation
+ * @constructor
+ */
 CanopyEnhancer.prototype.APThroughputCalc = function() {
     var table = document.getElementById('LuidOLtable');
     var tbody = table.querySelector('tbody');
@@ -1106,11 +1206,13 @@ CanopyEnhancer.prototype.APThroughputCalc = function() {
     var totalInTraffic = 0;
     var totalOutTraffic = 0;
     if (rows.length > 0) {
-        table.querySelector('thead tr:nth-child(1) th:nth-child(3)').setAttribute('colspan', 12);
-        table.querySelector('thead tr:nth-child(2) th:nth-child(1)').setAttribute('colspan', 6);
-        table.querySelector('thead tr:nth-child(2) th:nth-child(2)').setAttribute('colspan', 6);
+        table.querySelector('thead tr:nth-child(1) th:nth-child(3)').setAttribute('colspan', 14);
+        table.querySelector('thead tr:nth-child(2) th:nth-child(1)').setAttribute('colspan', 7);
+        table.querySelector('thead tr:nth-child(2) th:nth-child(2)').setAttribute('colspan', 7);
         table.querySelector('thead tr:nth-child(3) th:nth-child(1)').insertAdjacentHTML('afterend', '<th>traffic (Mbps)</th>');
-        table.querySelector('thead tr:nth-child(3) th:nth-child(6)').insertAdjacentHTML('afterend', '<th>traffic (Mbps)</th>');
+        table.querySelector('thead tr:nth-child(3) th:nth-child(4)').insertAdjacentHTML('afterend', '<th>data usage</th>');
+        table.querySelector('thead tr:nth-child(3) th:nth-child(8)').insertAdjacentHTML('afterend', '<th>traffic (Mbps)</th>');
+        table.querySelector('thead tr:nth-child(3) th:nth-child(11)').insertAdjacentHTML('afterend', '<th>data usage</th>');
         for(var i = 0; i <  rows.length; i++) {
             var LUID = parseInt(rows[i].querySelector('td:nth-child(2)').innerText);
             if (LUID < 255) {
@@ -1120,6 +1222,9 @@ CanopyEnhancer.prototype.APThroughputCalc = function() {
 
                 var currInPackets = parseInt(rows[i].querySelector('td:nth-child(4)').innerText);
                 var currOutPackets = parseInt(rows[i].querySelector('td:nth-child(9)').innerText);
+
+                var avgInPktSize = parseInt(rows[i].querySelector('td:nth-child(5)').innerText);
+                var avgOutPktSize = parseInt(rows[i].querySelector('td:nth-child(10)').innerText);
 
                 if (this.APThroughputSM[LUID] !== undefined) {
                     /**
@@ -1143,13 +1248,14 @@ CanopyEnhancer.prototype.APThroughputCalc = function() {
                     OutPPS = this.calcPerSeconds(currOutPackets, this.APThroughputSM[LUID].prevOutPackets);
                     OutPPS = Math.round(OutPPS);
                     this.APThroughputSM[LUID].prevOutPackets = currOutPackets;
-
                 } else {
                     this.APThroughputSM[LUID] = {
                         prevInOctets: currInOctets,
                         prevInPackets: currInPackets,
+                        InTotalData: (currInPackets * avgInPktSize).formatDataUsage(),
                         prevOutOctets: currOutOctets,
-                        prevOutPackets: currOutPackets
+                        prevOutPackets: currOutPackets,
+                        OutTotalData: (currOutPackets * avgOutPktSize).formatDataUsage()
                     };
                     InTraffic = 0;
                     OutTraffic = 0;
@@ -1162,14 +1268,19 @@ CanopyEnhancer.prototype.APThroughputCalc = function() {
                 InTraffic = InTraffic.byte2Mbit().toFixed(2);
                 OutTraffic = OutTraffic.byte2Mbit().toFixed(2);
 
-                rows[i].querySelector('td:nth-child(4)').innerHTML += " <b class=\"cge-color-blue-cambium\">("+InPPS+" pps)</b>";
-                rows[i].querySelector('td:nth-child(9)').innerHTML += " <b class=\"cge-color-blue-cambium\">("+OutPPS+" pps)</b>";
-
                 rows[i].querySelector('td:nth-child(3)').insertAdjacentHTML('afterend', '<td class="cge-highlight">'+InTraffic+'</td>');
-                rows[i].querySelector('td:nth-child(8)').insertAdjacentHTML('afterend', '<td class="cge-highlight">'+OutTraffic+'</td>');
+                rows[i].querySelector('td:nth-child(5)').innerHTML += "<br /><b class=\"cge-color-blue-cambium\">"+InPPS+" pps</b>";
+                rows[i].querySelector('td:nth-child(6)').insertAdjacentHTML('afterend', '<td class="cge-highlight">'+this.APThroughputSM[LUID].InTotalData+'</td>');
+
+                rows[i].querySelector('td:nth-child(10)').insertAdjacentHTML('afterend', '<td class="cge-highlight">'+OutTraffic+'</td>');
+                rows[i].querySelector('td:nth-child(12)').innerHTML += "<br /><b class=\"cge-color-blue-cambium\">"+OutPPS+" pps</b>";
+                rows[i].querySelector('td:nth-child(13)').insertAdjacentHTML('afterend', '<td class="cge-highlight">'+this.APThroughputSM[LUID].OutTotalData+'</td>');
+
             } else {
                 rows[i].querySelector('td:nth-child(3)').insertAdjacentHTML('afterend', '<td></td>');
-                rows[i].querySelector('td:nth-child(8)').insertAdjacentHTML('afterend', '<td></td>');
+                rows[i].querySelector('td:nth-child(5)').insertAdjacentHTML('afterend', '<td></td>');
+                rows[i].querySelector('td:nth-child(10)').insertAdjacentHTML('afterend', '<td></td>');
+                rows[i].querySelector('td:nth-child(12)').insertAdjacentHTML('afterend', '<td></td>');
             }
         }
     }

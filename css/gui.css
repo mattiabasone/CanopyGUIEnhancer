@@ -86,8 +86,7 @@ div#page {
 
 #SectionNatPublicArpTable table > tbody > tr > td,
 #SectionNatPrivateArpTable table > tbody > tr > td,
-#SectionRFPublicArpTable table > tbody > tr > td,
-#SectionNATTable table > tbody > tr > td {
+#SectionRFPublicArpTable table > tbody > tr > td {
     text-align: center;
 }
 
@@ -111,12 +110,65 @@ tr.dualitem:hover, table.section .tablewrapper:hover, body#uploadpage {
     border-color: #00152b;
 }
 
+/* =NAT */
+
+#SectionNATTable .sectiontitle {
+    margin-bottom: 0;
+}
+
+#SectionNATTable .section {
+    width: 100%;
+    padding: 0;
+}
+
+#SectionNATTable .section .singleitem > td {
+    padding:0;
+}
+
+#SectionNATTable .tablewrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+#SectionNATTable table > tbody > tr > td {
+    text-align: center;
+}
+
+#SectionNATTable #NAPTTBL table {
+    border: none;
+}
+
 /* =AP Throughput */
+#SectionLUIDStats .tablewrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+#SectionLUIDStats .sectiontitle {
+    margin-bottom: 0;
+}
+
+#SectionLUIDStats .section {
+    width: 100%;
+    margin-bottom: 0;
+}
+
+#SectionLUIDStats .section .singleitem > td {
+    padding:0;
+}
+
+#LuidOLtable {
+    width: 100%;
+    min-width: 100%;
+    border: none;
+    margin-bottom: 0;
+}
+
 #LuidOLtable tbody tr td {
     text-align: center;
     height: 39px;
 }
 #LuidOLtable tbody tr td:first-child {
     text-align: left;
-    max-width: 580px;
+    max-width: 520px;
 }

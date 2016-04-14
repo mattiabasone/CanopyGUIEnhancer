@@ -52,10 +52,10 @@ body {
 }
 
 .cge-good-power-level {
-    color: #4CAF50;
+    color: #3f974d;
 }
 
-.cge-decent-power-level {
+.cge-decent-power-level, .cge-warning {
     color: #F9A825;
 }
 
