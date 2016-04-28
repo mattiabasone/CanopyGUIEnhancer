@@ -69,7 +69,7 @@ String.prototype.trimBlank = function() {
  * @returns {boolean}
  */
 String.prototype.isMAC = function() {
-    var res = this.match(/^(([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2}))$/);
+    var res = this.match(/^(([0-9A-Fa-f]{2}[:-]?){5}([0-9A-Fa-f]{2}))$/);
     if (res !== null) {
         return true;
     } else {

@@ -23,6 +23,15 @@ The extension has been tested on the following software versions, with old versi
 
 ## Changelog
 
+### Version 1.7
+
+* Added MAC Lookup for Statistics -> Bridging Table
+* Changed <a> color
+* Changed left menu colors
+* Changed AP Evaluation entries headers style
+* [Bugfix] Wrong calculations for tooltip position
+* [Bugfix] Extension does not work with PMP100 AP "Adjustable Power"
+
 ### Version 1.6
 
 * Added per-SM traffic and packets per seconds in the AP -> Statistics -> Throughput page

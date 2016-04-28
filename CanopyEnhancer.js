@@ -253,15 +253,15 @@ CanopyEnhancer.prototype.initialize = function() {
         var title = page.querySelector("h2");
         if (title !== null) {
             var titleString = title.innerText;
-            var resDevType = titleString.match(/.*GHz\s\-\s([a-zA-Z\-\s]+)\s\-\s([A-Fa-f0-9\-]{17})/);
+            var resDevType = titleString.match(/.*(?:GHz|MHz)(?:\sAdjustable\sPower)?\s\-\s([a-zA-Z\-\s]+)\s\-\s([A-Fa-f0-9\-]{17})/);
             if (resDevType != null) {
                 this.currentRadioModulation = 'FSK';
             } else {
-                resDevType = titleString.match(/.*GHz\sSISO\sOFDM\s\-\s([a-zA-Z\-\s]+)\s\-\s([A-Fa-f0-9\-]{17})/);
+                resDevType = titleString.match(/.*(?:GHz|MHz)\sSISO\sOFDM\s\-\s([a-zA-Z\-\s]+)\s\-\s([A-Fa-f0-9\-]{17})/);
                 if (resDevType != null) {
                     this.currentRadioModulation = 'SISO_OFDM';
                 } else {
-                    resDevType = titleString.match(/.*GHz\sMIMO\sOFDM\s\-\s([a-zA-Z\-\s]+)\s\-\s([A-Fa-f0-9\-]{17})/);
+                    resDevType = titleString.match(/.*(?:GHz|MHz)\sMIMO\sOFDM\s\-\s([a-zA-Z\-\s]+)\s\-\s([A-Fa-f0-9\-]{17})/);
                 }
             }
             this.getDevType(resDevType[1]);
@@ -290,7 +290,7 @@ CanopyEnhancer.prototype.initialize = function() {
         _this.homePage();
         _this.realTimeTraffic();
         _this.betterEvaluation();
-        _this.ARPPageMacLookup();
+        _this.MacLookupPage();
         _this.NATTable();
         _this.APThroughput();
     }
@@ -310,6 +310,11 @@ CanopyEnhancer.prototype.getRefreshTime = function() {
     }
 };
 
+/**
+ * Device type
+ *
+ * @param string
+ */
 CanopyEnhancer.prototype.getDevType = function(string) {
     if (string === "Subscriber Module") {
         this.currentRadioType = "SM";
@@ -897,7 +902,7 @@ CanopyEnhancer.prototype.renderBetterEvaluationTemplate = function() {
 
     var evaluationContent = '';
     evaluationContent += "<div class='betterEvaluationHead'> <b>AP Selection Method:</b> "+this.apSelectionMethod+' - ';
-    evaluationContent += " <b>Current evaluation entry:</b> "+this.currentEvaluatinEntry+' - ';
+    evaluationContent += ' <b>Current evaluation entry:</b> <a href="#cge-ap-eval-entry-'+this.currentEvaluatinEntry+'">'+this.currentEvaluatinEntry+'</a> - ';
     evaluationContent += " <b>Session status:</b> "+this.currentSessionStatus;
     if (this.currentSessionStatus == 'SCANNING') {
         evaluationContent += " - <b>Currently Scanning:</b> "+this.currentlyScanning;
@@ -912,10 +917,9 @@ CanopyEnhancer.prototype.renderBetterEvaluationTemplate = function() {
         var insRow = true;
         var counter = 0;
         evaluationContent += '<div class="cge-ap-evaluation-entry-title">';
+        evaluationContent += '<a name="cge-ap-eval-entry-'+currIndex+'"></a>Entry: ' + currIndex;
         if (currIndex == this.currentEvaluatinEntry) {
-            evaluationContent += '<b class="cge-color-blue-cambium">Entry: ' + currIndex + ' - Current AP</b><br />';
-        } else {
-            evaluationContent += '<b>Entry: ' + currIndex + '</b><br />';
+            evaluationContent += ' - Current AP';
         }
         evaluationContent += '</div>';
         evaluationContent += '<table class="table table-responsive table-striped table-condensed table-bordered cge-ap-evaluation-entry-table"><tbody>';
@@ -998,7 +1002,7 @@ CanopyEnhancer.prototype.betterEvaluation = function() {
  ** ======================================================================*/
 
 /**
- * MAC LookUp API
+ * MAC Lookup API
  * @param block
  * @constructor
  */
@@ -1011,6 +1015,7 @@ CanopyEnhancer.prototype.MACLookUp = function(block) {
     if (macaddress.isMAC()) {
         jsonp('https://macvendors.co/api/jsonp/'+macaddress, function(data) {
             if (data.result !== undefined) {
+                var attrContent;
                 if (_this.debugMessages() === true) {
                     console.log(data);
                 }
@@ -1026,13 +1031,12 @@ CanopyEnhancer.prototype.MACLookUp = function(block) {
                 _this.tooltipMACNode.style.display = 'block';
                 var tooltipRect = _this.tooltipMACNode.getBoundingClientRect();
                 _this.tooltipMACNode.style.top = ( (blockRect.top + document.body.scrollTop) - (tooltipRect.height) - 5) + "px";
-                _this.tooltipMACNode.style.left = (blockRect.left - (blockRect.width / 2) + (tooltipRect.width / 2))+ "px";
+                _this.tooltipMACNode.style.left = ( (blockRect.left + (blockRect.width / 2)) - (tooltipRect.width / 2))+ "px";
             }
         });
     } else {
         _this.tooltipMACNode.style.display = 'none';
         block.classList.remove('cge-highlight');
-
     }
 };
 
@@ -1058,17 +1062,23 @@ CanopyEnhancer.prototype.addMACLookUpListener = function(querySelector) {
 };
 
 /**
+ * Tooltip
+ * @constructor
+ */
+CanopyEnhancer.prototype.MACLookupTooltip = function() {
+    // Tooltip
+    this.tooltipMACNode = document.createElement('div');
+    this.tooltipMACNode.id = 'cge-mac-lookup-tooltip';
+    this.tooltipMACNode.className = 'cge-tooltip';
+    document.getElementsByTagName("body")[0].appendChild(this.tooltipMACNode);
+};
+
+/**
  * ARP Page processing
  */
-CanopyEnhancer.prototype.ARPPageMacLookup = function() {
-    if (this.currentCatIndex == 2 && this.currentPageIndex == 20 && this.settings.cge_mac_lookup == 1) {
-
-        // Tooltip
-        this.tooltipMACNode = document.createElement('div');
-        this.tooltipMACNode.id = 'cge-mac-lookup-tooltip';
-        this.tooltipMACNode.className = 'cge-tooltip';
-        document.getElementsByTagName("body")[0].appendChild(this.tooltipMACNode);
-
+CanopyEnhancer.prototype.MacLookupPage = function() {
+    if ((this.currentCatIndex == 2 && (this.currentPageIndex == 20 || this.currentPageIndex == 5)) && (this.settings.cge_mac_lookup == 1)) {
+        this.MACLookupTooltip();
         this.addMACLookUpListener('#page');
     }
 };
@@ -1223,9 +1233,6 @@ CanopyEnhancer.prototype.APThroughputCalc = function() {
                 var currInPackets = parseInt(rows[i].querySelector('td:nth-child(4)').innerText);
                 var currOutPackets = parseInt(rows[i].querySelector('td:nth-child(9)').innerText);
 
-                var avgInPktSize = parseInt(rows[i].querySelector('td:nth-child(5)').innerText);
-                var avgOutPktSize = parseInt(rows[i].querySelector('td:nth-child(10)').innerText);
-
                 if (this.APThroughputSM[LUID] !== undefined) {
                     /**
                      * IN
@@ -1252,10 +1259,8 @@ CanopyEnhancer.prototype.APThroughputCalc = function() {
                     this.APThroughputSM[LUID] = {
                         prevInOctets: currInOctets,
                         prevInPackets: currInPackets,
-                        InTotalData: (currInPackets * avgInPktSize).formatDataUsage(),
                         prevOutOctets: currOutOctets,
-                        prevOutPackets: currOutPackets,
-                        OutTotalData: (currOutPackets * avgOutPktSize).formatDataUsage()
+                        prevOutPackets: currOutPackets
                     };
                     InTraffic = 0;
                     OutTraffic = 0;
@@ -1270,11 +1275,11 @@ CanopyEnhancer.prototype.APThroughputCalc = function() {
 
                 rows[i].querySelector('td:nth-child(3)').insertAdjacentHTML('afterend', '<td class="cge-highlight">'+InTraffic+'</td>');
                 rows[i].querySelector('td:nth-child(5)').innerHTML += "<br /><b class=\"cge-color-blue-cambium\">"+InPPS+" pps</b>";
-                rows[i].querySelector('td:nth-child(6)').insertAdjacentHTML('afterend', '<td class="cge-highlight">'+this.APThroughputSM[LUID].InTotalData+'</td>');
+                rows[i].querySelector('td:nth-child(6)').insertAdjacentHTML('afterend', '<td class="cge-highlight">'+this.APThroughputSM[LUID].prevInOctets.formatDataUsage()+'</td>');
 
                 rows[i].querySelector('td:nth-child(10)').insertAdjacentHTML('afterend', '<td class="cge-highlight">'+OutTraffic+'</td>');
                 rows[i].querySelector('td:nth-child(12)').innerHTML += "<br /><b class=\"cge-color-blue-cambium\">"+OutPPS+" pps</b>";
-                rows[i].querySelector('td:nth-child(13)').insertAdjacentHTML('afterend', '<td class="cge-highlight">'+this.APThroughputSM[LUID].OutTotalData+'</td>');
+                rows[i].querySelector('td:nth-child(13)').insertAdjacentHTML('afterend', '<td class="cge-highlight">'+this.APThroughputSM[LUID].prevOutOctets.formatDataUsage()+'</td>');
 
             } else {
                 rows[i].querySelector('td:nth-child(3)').insertAdjacentHTML('afterend', '<td></td>');
