@@ -28,7 +28,7 @@ The extension has been tested on the following software versions, with old versi
 
 * Added Throughput, PPS and data usage in the Data VC table (AP only)
 * Added PHP-like intval() function
-* Added Site Name in the <h1> tag on each page
+* Added Site Name in the h1 tag on each page
 * Added Changelog button (settings popup)
 * Fixed console error in background.js
 
