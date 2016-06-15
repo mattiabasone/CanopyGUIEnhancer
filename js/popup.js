@@ -6,6 +6,7 @@ var formFields = [
     'cge_rtt_type',
     'cge_ap_evaluation',
     'cge_ap_throughput',
+    'cge_ap_data_vc',
     'cge_debug'
 ];
 

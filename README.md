@@ -3,6 +3,7 @@ Canopy GUI Enhancer - Chrome Extension
 
 This extension enhance the standard CambiumNetworks Canopy Web GUI (tested on PMP100 PMP430 and PMP450)
 Available here: https://goo.gl/0SKMRJ
+Thread on the Official Cambium Networks Forum: http://goo.gl/fyt51w
 
 ## Requirements
 
@@ -22,6 +23,14 @@ The extension has been tested on the following software versions, with old versi
 * New styles for wrappers
 
 ## Changelog
+
+### Version 1.8
+
+* Added Throughput, PPS and data usage in the Data VC table (AP only)
+* Added PHP-like intval() function
+* Added Site Name in the <h1> tag on each page
+* Added Changelog button (settings popup)
+* Fixed console error in background.js
 
 ### Version 1.7
 

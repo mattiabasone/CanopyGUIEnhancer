@@ -2,10 +2,10 @@ chrome.storage.local.get(null, function (data) {
     
     var stylesheet = document.getElementsByTagName('link')[0];
 
-    if (stylesheet) {
+    if (stylesheet && stylesheet.getAttribute('href') != null) {
         var res = stylesheet.getAttribute('href').match(/\_canopy\.css\?mac_esn\=([A-Fa-f0-9]{12})/);
 
-        if (res != null) {
+        if (res) {
 
             var settingsObj = {};
 
@@ -20,6 +20,7 @@ chrome.storage.local.get(null, function (data) {
                     cge_rtt_type: 'string',
                     cge_ap_evaluation: 1,
                     cge_ap_throughput: 1,
+                    cge_ap_data_vc: 1,
                     cge_debug: 0
                 };
                 chrome.storage.local.set(settingsObj);

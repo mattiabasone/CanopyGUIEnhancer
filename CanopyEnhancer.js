@@ -13,6 +13,7 @@ var CanopyEnhancer = function() {
         cge_mac_lookup: 1,
         cge_ap_evaluation: 1,
         cge_ap_throughput: 1,
+        cge_ap_data_vc: 1,
         cge_rtt_type: 'string',
         cge_debug : 0
     };
@@ -74,6 +75,7 @@ var CanopyEnhancer = function() {
         pages: {
             7: "Ethernet",
             9: "Radio",
+            11: "Data VC",
             12: "Throughput",
             15: "NAT DHCP",
             20: "ARP"
@@ -279,6 +281,9 @@ CanopyEnhancer.prototype.initialize = function() {
         this.identifySection();
         this.getRefreshTime();
 
+        // Site name in title
+        document.querySelector('#page > h1').innerHTML = '<strong class="cge-color-blue-cambium">'+this.getSiteNameTitle()+':</strong> '+document.querySelector('#page > h1').innerHTML;
+
         if (_this.debugMessages() === true) {
             console.log("CGE Enabled!");
             console.log("Current radio MAC " + _this.currentRadioMAC);
@@ -293,7 +298,17 @@ CanopyEnhancer.prototype.initialize = function() {
         _this.MacLookupPage();
         _this.NATTable();
         _this.APThroughput();
+        _this.APDataVC();
     }
+};
+
+CanopyEnhancer.prototype.getSiteNameTitle = function() {
+    var title = document.getElementsByTagName('title')[0].innerText;
+    var match = title.match(/(.*)\s\-\s(?:[a-zA-Z0-9\s]+)\[(?:.*)\]/);
+    if (match) {
+        return match[1];
+    }
+    return '';
 };
 
 /**
@@ -402,11 +417,17 @@ CanopyEnhancer.prototype.SetUpAJAX = function() {
                                     }
                                 }
                             }
+
                             if (_this.ishomePage()) {
                                 _this.homePageRender();
                             }
+
                             if (_this.isAPThroughputPage()) {
                                 _this.APThroughputCalc();
+                            }
+
+                            if (_this.isAPDataVCPage()) {
+                                _this.APDataVCCalc();
                             }
                         }
                     } else if (request.status == 401) {
@@ -562,6 +583,11 @@ CanopyEnhancer.prototype.homePageRender = function () {
             distanceBlock.innerText += ' - '+km.toFixed(3)+' kilometres';
         }
     }
+
+    // Move site info box
+    var content = document.getElementById('SectionSiteInfoStats');
+    var parent = content.parentNode;
+    parent.insertBefore(content, document.getElementById('SectionDeviceInfo'));
 };
 
 /**
@@ -1227,11 +1253,11 @@ CanopyEnhancer.prototype.APThroughputCalc = function() {
             var LUID = parseInt(rows[i].querySelector('td:nth-child(2)').innerText);
             if (LUID < 255) {
                 var InTraffic, OutTraffic, InPPS, OutPPS;
-                var currInOctets = parseInt(rows[i].querySelector('td:nth-child(3)').innerText);
-                var currOutOctets = parseInt(rows[i].querySelector('td:nth-child(8)').innerText);
+                var currInOctets = intval(rows[i].querySelector('td:nth-child(3)').innerText);
+                var currOutOctets = intval(rows[i].querySelector('td:nth-child(8)').innerText);
 
-                var currInPackets = parseInt(rows[i].querySelector('td:nth-child(4)').innerText);
-                var currOutPackets = parseInt(rows[i].querySelector('td:nth-child(9)').innerText);
+                var currInPackets = intval(rows[i].querySelector('td:nth-child(4)').innerText);
+                var currOutPackets = intval(rows[i].querySelector('td:nth-child(9)').innerText);
 
                 if (this.APThroughputSM[LUID] !== undefined) {
                     /**
@@ -1286,6 +1312,178 @@ CanopyEnhancer.prototype.APThroughputCalc = function() {
                 rows[i].querySelector('td:nth-child(5)').insertAdjacentHTML('afterend', '<td></td>');
                 rows[i].querySelector('td:nth-child(10)').insertAdjacentHTML('afterend', '<td></td>');
                 rows[i].querySelector('td:nth-child(12)').insertAdjacentHTML('afterend', '<td></td>');
+            }
+        }
+    }
+};
+
+/** ======================================================================
+ *  =AP DATA VC
+ ** ======================================================================*/
+
+/**
+ * Is the throughput page
+ * @returns {boolean}
+ */
+CanopyEnhancer.prototype.isAPDataVCPage = function() {
+    if (this.currentCatIndex == 2 && this.currentPageIndex == 11) {
+        return true;
+    }
+    return false;
+};
+
+/**
+ * AP Throughput check
+ * @constructor
+ */
+CanopyEnhancer.prototype.APDataVC = function() {
+    if (this.isAPDataVCPage() && this.settings.cge_ap_data_vc == 1) {
+        if (this.refreshTime > 0) {
+            this.SetUpAJAX();
+        } else {
+            document.getElementById('SectionDnlkStatsHW').insertAdjacentHTML(
+                'beforebegin',
+                '<div class="cge-error">Set Webpage Auto Update > 0 for real time stats (Configuration => General)</div>'
+            );
+        }
+    }
+};
+
+/**
+ * AP Throughput calculation
+ * @constructor
+ */
+CanopyEnhancer.prototype.APDataVCCalc = function() {
+    var table = document.getElementById('datavctable');
+    var tbody = table.querySelector('tbody');
+    var rows = tbody.querySelectorAll('tr');
+    var totalInTraffic = 0;
+    var totalOutTraffic = 0;
+    if (rows.length > 0) {
+        table.querySelector('thead tr:nth-child(1) th:nth-child(4)').setAttribute('colspan', 11);
+        table.querySelector('thead tr:nth-child(1) th:nth-child(5)').setAttribute('colspan', 7);
+        table.querySelector('thead tr:nth-child(2) th:nth-child(1)').insertAdjacentHTML('afterend', '<th>traffic (Mbps)</th>');
+        table.querySelector('thead tr:nth-child(2) th:nth-child(4)').insertAdjacentHTML('afterend', '<th>data usage</th>');
+        table.querySelector('thead tr:nth-child(2) th:nth-child(12)').insertAdjacentHTML('afterend', '<th>traffic (Mbps)</th>');
+        table.querySelector('thead tr:nth-child(2) th:nth-child(15)').insertAdjacentHTML('afterend', '<th>data usage</th>');
+
+        var tableChild = {
+            low: {
+                currInOctets: 4,
+                currInUPackets: 5,
+                currInNuPackets: 6,
+                currOutOctets: 13,
+                currOutUPackets: 14,
+                currOutNuPackets: 15
+            },
+            high: {
+                currInOctets: 3,
+                currInUPackets: 4,
+                currInNuPackets: 5,
+                currOutOctets: 8,
+                currOutUPackets: 9,
+                currOutNuPackets: 10
+            }
+        };
+
+        for(var i = 0; i <  rows.length; i++) {
+            var LUID, VCType;
+            if (rows[i].querySelector('td:nth-child(1)').innerText.length === 3) {
+                LUID = intval(rows[i].querySelector('td:nth-child(1)').innerText);
+                VCType = 'high';
+            } else {
+                LUID = intval(rows[i].querySelector('td:nth-child(2)').innerText)
+                var htmlSMName = rows[i].querySelector('td:nth-child(1)').innerHTML;
+                htmlSMName = htmlSMName.replace(/\s\-\sLUID\:/, '<br />LUID:');
+                rows[i].querySelector('td:nth-child(1)').innerHTML = htmlSMName;
+                rows[i].querySelector('td:nth-child(1)').style.minWidth = '200px';
+                rows[i].querySelector('td:nth-child(1)').style.textAlign = 'left';
+                VCType = 'low';
+            }
+
+            if (LUID <= 255) {
+                var InTraffic, OutTraffic, InUPPS, InNuPPS, OutUPPS, OutNuPPS;
+                var currInOctets = intval(rows[i].querySelector('td:nth-child('+tableChild[VCType].currInOctets+')').innerText);
+                var currOutOctets = intval(rows[i].querySelector('td:nth-child('+tableChild[VCType].currOutOctets+')').innerText);
+
+                var currInUPackets = intval(rows[i].querySelector('td:nth-child('+tableChild[VCType].currInUPackets+')').innerText);
+                var currInNuPackets = intval(rows[i].querySelector('td:nth-child('+tableChild[VCType].currInNuPackets+')').innerText);
+                var currOutUPackets = intval(rows[i].querySelector('td:nth-child('+tableChild[VCType].currOutUPackets+')').innerText);
+                var currOutNuPackets = intval(rows[i].querySelector('td:nth-child('+tableChild[VCType].currOutNuPackets+')').innerText);
+
+                if (this.APThroughputSM[LUID] !== undefined) {
+                    /**
+                     * IN
+                     */
+                    // traffic
+                    InTraffic = this.calcPerSeconds(currInOctets, this.APThroughputSM[LUID].prevInOctets);
+                    this.APThroughputSM[LUID].prevInOctets = currInOctets;
+
+                    // Unicast packets
+                    InUPPS = this.calcPerSeconds(currInUPackets, this.APThroughputSM[LUID].prevInUPackets);
+                    InUPPS = Math.round(InUPPS);
+                    this.APThroughputSM[LUID].prevInUPackets = currInUPackets;
+                    // Non Unicast packets
+                    InNuPPS = this.calcPerSeconds(currInNuPackets, this.APThroughputSM[LUID].prevInNuPackets);
+                    InNuPPS = Math.round(InNuPPS);
+                    this.APThroughputSM[LUID].prevInNuPackets = currInNuPackets;
+
+                    /**
+                     * OUT
+                     */
+                    // traffic
+                    OutTraffic = this.calcPerSeconds(currOutOctets, this.APThroughputSM[LUID].prevOutOctets);
+                    this.APThroughputSM[LUID].prevOutOctets = currOutOctets;
+
+                    // packets
+                    OutUPPS = this.calcPerSeconds(currOutUPackets, this.APThroughputSM[LUID].prevOutUPackets);
+                    OutUPPS = Math.round(OutUPPS);
+                    this.APThroughputSM[LUID].prevOutUPackets = currOutUPackets;
+
+                    // packets
+                    OutNuPPS = this.calcPerSeconds(currOutNuPackets, this.APThroughputSM[LUID].prevOutNuPackets);
+                    OutNuPPS = Math.round(OutNuPPS);
+                    this.APThroughputSM[LUID].prevOutNuPackets = currOutNuPackets;
+
+                } else {
+                    this.APThroughputSM[LUID] = {
+                        prevInOctets: currInOctets,
+                        prevInUPackets: currInUPackets,
+                        prevInNuPackets: currInNuPackets,
+                        prevOutOctets: currOutOctets,
+                        prevOutUPackets: currOutUPackets,
+                        prevOutNuPackets: currOutNuPackets
+                    };
+                    InTraffic = 0;
+                    OutTraffic = 0;
+                    InUPPS = 0;
+                    InNuPPS = 0;
+                    OutUPPS = 0;
+                    OutNuPPS = 0;
+                }
+                totalInTraffic = totalInTraffic + InTraffic;
+                totalOutTraffic = totalOutTraffic + OutTraffic;
+
+                InTraffic = InTraffic.byte2Mbit().toFixed(2);
+                OutTraffic = OutTraffic.byte2Mbit().toFixed(2);
+
+                // Outbound
+                rows[i].querySelector('td:nth-child('+tableChild[VCType].currOutNuPackets+')').insertAdjacentHTML('afterend', '<td class="cge-highlight">'+this.APThroughputSM[LUID].prevOutOctets.formatDataUsage()+'</td>');
+                rows[i].querySelector('td:nth-child('+tableChild[VCType].currOutNuPackets+')').innerHTML += "<br /><b class=\"cge-color-blue-cambium\">" + OutNuPPS + " pps</b>";
+                rows[i].querySelector('td:nth-child('+tableChild[VCType].currOutUPackets+')').innerHTML += "<br /><b class=\"cge-color-blue-cambium\">" + OutUPPS + " pps</b>";
+                rows[i].querySelector('td:nth-child('+tableChild[VCType].currOutOctets+')').insertAdjacentHTML('afterend', '<td class="cge-highlight">'+OutTraffic+'</td>');
+
+                // Inbound
+                rows[i].querySelector('td:nth-child('+tableChild[VCType].currInNuPackets+')').insertAdjacentHTML('afterend', '<td class="cge-highlight">'+this.APThroughputSM[LUID].prevInOctets.formatDataUsage()+'</td>');
+                rows[i].querySelector('td:nth-child('+tableChild[VCType].currInNuPackets+')').innerHTML += "<br /><b class=\"cge-color-blue-cambium\">" + InNuPPS + " pps</b>";
+                rows[i].querySelector('td:nth-child('+tableChild[VCType].currInUPackets+')').innerHTML += "<br /><b class=\"cge-color-blue-cambium\">" + InUPPS + " pps</b>";
+                rows[i].querySelector('td:nth-child('+tableChild[VCType].currInOctets+')').insertAdjacentHTML('afterend', '<td class="cge-highlight">'+InTraffic+'</td>');
+
+            } else {
+                rows[i].querySelector('td:nth-child('+tableChild[VCType].currOutNuPackets+')').insertAdjacentHTML('afterend', '<td></td>');
+                rows[i].querySelector('td:nth-child('+tableChild[VCType].currOutOctets+')').insertAdjacentHTML('afterend', '<td></td>');
+                rows[i].querySelector('td:nth-child('+tableChild[VCType].currInNuPackets+')').insertAdjacentHTML('afterend', '<td></td>');
+                rows[i].querySelector('td:nth-child('+tableChild[VCType].currInOctets+')').insertAdjacentHTML('afterend', '<td></td>');
             }
         }
     }

@@ -29,18 +29,18 @@ Number.prototype.formatDataUsage = function() {
     var num;
     if (this >= 1000000000000) {
         num = Math.round(this / 1099511627776);
-        num = num + ' TB';
+        num = num + 'TB';
     } else if (this >= 1000000000) {
         num = Math.round(this / 1073741824);
-        num = num + ' GB';
+        num = num + 'GB';
     } else if (this >= 1000000) {
         num = Math.round(this / 1048576);
-        num = num + ' MB';
+        num = num + 'MB';
     } else if (this >= 1000) {
         num = Math.round(this / 1024);
-        num = num + ' KB';
+        num = num + 'kB';
     } else {
-        num = Math.round(this) + ' Bytes';
+        num = Math.round(this) + 'B';
     }
     return num;
 };
@@ -137,6 +137,20 @@ String.prototype.regexLastIndexOf = function(regex, startpos) {
     }
     return lastIndexOf;
 };
+
+/**
+ * intval() like PHP
+ *
+ * @param number
+ * @returns {*}
+ */
+function intval(number) {
+    number = parseInt(number);
+    if (!isNaN(number)) {
+        return number;
+    }
+    return 0;
+}
 
 function jsonp(url, callback) {
     var callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());

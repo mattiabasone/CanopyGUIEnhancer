@@ -1,3 +1,17 @@
+## Version 1.8
+
+Features:
+* Added Throughput, PPS and data usage in the Data VC table (AP only)
+* Added PHP-like intval() function
+* Added Site Name in the <h1> tag on each page
+* Added Changelog button (settings popup)
+
+Changes:
+* Moved "Site Information" at the top of the page (Homepage)
+
+Bugfixes
+* Fixed console error in background.js
+
 ## Version 1.7
 
 Features:
