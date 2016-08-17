@@ -30,12 +30,15 @@ The extension has been tested on the following software versions, with old versi
 * Added PHP-like intval() function
 * Added Site Name in the h1 tag on each page
 * Added Changelog button (settings popup)
-* Fixed console error in background.js
+* Renamed background.js in content_loader.js
+* [Bugfix] Console error in content_loader.js
+* [Bugfix] AP Throughput page does not work with 14.2
+* [Bugfix] Ethernet link speed check does not work on 14.2
 
 ### Version 1.7
 
 * Added MAC Lookup for Statistics -> Bridging Table
-* Changed <a> color
+* Changed links color
 * Changed left menu colors
 * Changed AP Evaluation entries headers style
 * [Bugfix] Wrong calculations for tooltip position

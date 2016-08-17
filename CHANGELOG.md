@@ -1,3 +1,12 @@
+## Version 1.8.1
+
+Changes:
+* Renamed background.js in content_loader.js
+
+Bugfixes
+* AP Throughput page does not work with 14.2
+* Ethernet link speed check does not work on 14.2
+
 ## Version 1.8
 
 Features:
@@ -10,7 +19,7 @@ Changes:
 * Moved "Site Information" at the top of the page (Homepage)
 
 Bugfixes
-* Fixed console error in background.js
+* Fixed console error in content_loader.js
 
 ## Version 1.7
 
@@ -18,7 +27,7 @@ Features:
 * Added MAC Lookup for Statistics -> Bridging Table
 
 Changes:
-* Changed <a> color
+* Changed links color
 * Changed left menu colors
 * Changed AP Evaluation entries headers style
 

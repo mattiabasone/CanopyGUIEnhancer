@@ -77,6 +77,7 @@ var CanopyEnhancer = function() {
             9: "Radio",
             11: "Data VC",
             12: "Throughput",
+            // 13: "Throughput", // From version 14.2
             15: "NAT DHCP",
             20: "ARP"
         }
@@ -570,9 +571,16 @@ CanopyEnhancer.prototype.ishomePage = function() {
  */
 CanopyEnhancer.prototype.homePageRender = function () {
 
-    var linkStatus = document.getElementById("LinkStatus").innerText;
+    var linkStatusBlock = null;
+    if (document.getElementById("LinkStatus") !== null) {
+        linkStatusBlock = document.getElementById("LinkStatus");
+    } else {
+        linkStatusBlock = document.getElementById("LinkStatusMain");
+    }
+
+    var linkStatus = linkStatusBlock.innerText;
     if (linkStatus !== '100Base-TX Full Duplex' && linkStatus !== '1000Base-T Full Duplex') {
-        document.getElementById("LinkStatus").innerHTML = ' <span class="cge-warning">'+document.getElementById("LinkStatus").innerHTML +'</span>'
+        linkStatusBlock.innerHTML = ' <span class="cge-warning">'+linkStatusBlock.innerHTML +'</span>'
     }
 
     var distanceBlock = document.getElementById('Distance');
@@ -1211,6 +1219,10 @@ CanopyEnhancer.prototype.isAPThroughputPage = function() {
     if (this.currentCatIndex == 2 && this.currentPageIndex == 12) {
         return true;
     }
+
+    if (document.getElementById('SectionLUIDStats') !== null) {
+        return true;
+    }
     return false;
 };
 
@@ -1245,10 +1257,10 @@ CanopyEnhancer.prototype.APThroughputCalc = function() {
         table.querySelector('thead tr:nth-child(1) th:nth-child(3)').setAttribute('colspan', 14);
         table.querySelector('thead tr:nth-child(2) th:nth-child(1)').setAttribute('colspan', 7);
         table.querySelector('thead tr:nth-child(2) th:nth-child(2)').setAttribute('colspan', 7);
-        table.querySelector('thead tr:nth-child(3) th:nth-child(1)').insertAdjacentHTML('afterend', '<th>traffic (Mbps)</th>');
-        table.querySelector('thead tr:nth-child(3) th:nth-child(4)').insertAdjacentHTML('afterend', '<th>data usage</th>');
-        table.querySelector('thead tr:nth-child(3) th:nth-child(8)').insertAdjacentHTML('afterend', '<th>traffic (Mbps)</th>');
-        table.querySelector('thead tr:nth-child(3) th:nth-child(11)').insertAdjacentHTML('afterend', '<th>data usage</th>');
+        table.querySelector('thead tr:nth-child(3) th:nth-child(1)').insertAdjacentHTML('afterend', '<th class="table-sortable:numeric table-sortable" title="Click to sort">traffic (Mbps)</th>');
+        table.querySelector('thead tr:nth-child(3) th:nth-child(4)').insertAdjacentHTML('afterend', '<th class="table-sortable:numeric table-sortable" title="Click to sort">data usage</th>');
+        table.querySelector('thead tr:nth-child(3) th:nth-child(8)').insertAdjacentHTML('afterend', '<th class="table-sortable:numeric table-sortable" title="Click to sort">traffic (Mbps)</th>');
+        table.querySelector('thead tr:nth-child(3) th:nth-child(11)').insertAdjacentHTML('afterend', '<th class="table-sortable:numeric table-sortable" title="Click to sort">data usage</th>');
         for(var i = 0; i <  rows.length; i++) {
             var LUID = parseInt(rows[i].querySelector('td:nth-child(2)').innerText);
             if (LUID < 255) {
@@ -1362,10 +1374,10 @@ CanopyEnhancer.prototype.APDataVCCalc = function() {
     if (rows.length > 0) {
         table.querySelector('thead tr:nth-child(1) th:nth-child(4)').setAttribute('colspan', 11);
         table.querySelector('thead tr:nth-child(1) th:nth-child(5)').setAttribute('colspan', 7);
-        table.querySelector('thead tr:nth-child(2) th:nth-child(1)').insertAdjacentHTML('afterend', '<th>traffic (Mbps)</th>');
-        table.querySelector('thead tr:nth-child(2) th:nth-child(4)').insertAdjacentHTML('afterend', '<th>data usage</th>');
-        table.querySelector('thead tr:nth-child(2) th:nth-child(12)').insertAdjacentHTML('afterend', '<th>traffic (Mbps)</th>');
-        table.querySelector('thead tr:nth-child(2) th:nth-child(15)').insertAdjacentHTML('afterend', '<th>data usage</th>');
+        table.querySelector('thead tr:nth-child(2) th:nth-child(1)').insertAdjacentHTML('afterend', '<th class="table-sortable:numeric table-sortable" title="Click to sort">traffic (Mbps)</th>');
+        table.querySelector('thead tr:nth-child(2) th:nth-child(4)').insertAdjacentHTML('afterend', '<th class="table-sortable:numeric table-sortable" title="Click to sort">data usage</th>');
+        table.querySelector('thead tr:nth-child(2) th:nth-child(12)').insertAdjacentHTML('afterend', '<th class="table-sortable:numeric table-sortable" title="Click to sort">traffic (Mbps)</th>');
+        table.querySelector('thead tr:nth-child(2) th:nth-child(15)').insertAdjacentHTML('afterend', '<th class="table-sortable:numeric table-sortable" title="Click to sort">data usage</th>');
 
         var tableChild = {
             low: {
