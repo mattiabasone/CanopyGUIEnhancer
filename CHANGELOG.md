@@ -1,3 +1,20 @@
+## Version 1.8.3
+
+Bugfixes
+* MAC Address lookup does not work on 14.2/14.2.1
+* Extension does not work on 14.2/14.2.1 2.4GHz PMP450
+* Removed some innerHTML
+* Code cleaning
+
+## Version 1.8.2
+
+Changes:
+* Added EscapeHTML on SetupAjax (or it does not pass review on Firefox Add-On platform)
+
+Bugfixes
+* Saved settings does not load in the popup on Firefox
+* Fixed wrong font style (Firefox)
+
 ## Version 1.8.1
 
 Changes:

@@ -152,6 +152,12 @@ function intval(number) {
     return 0;
 }
 
+/**
+ * JSONP Function
+ *
+ * @param url
+ * @param callback
+ */
 function jsonp(url, callback) {
     var callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
     window[callbackName] = function(data) {
@@ -163,4 +169,42 @@ function jsonp(url, callback) {
     var script = document.createElement('script');
     script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
     document.body.appendChild(script);
+}
+
+/**
+ * Escape HTML
+ *
+ * @param str
+ */
+function escapeHTML(str) {
+    str.replace(
+        /[&"<>]/g,
+        function(m){escapeHTML.replacements[m]}
+    );
+    return str;
+}
+escapeHTML.replacements = { "&": "&amp;", '"': "&quot;", "<": "&lt;", ">": "&gt;" };
+
+/**
+ * Load JS script Async
+ * @param path
+ */
+function loadJS(path) {
+    var newBlock = document.createElement("script");
+    newBlock.src = path;
+    newBlock.async = true;
+    newBlock.type = "text/javascript";
+    document.getElementsByTagName("body")[0].appendChild(newBlock);
+}
+
+/**
+ * Load CSS Async
+ * @param path
+ */
+function loadCSS(path) {
+    var newBlock = document.createElement("link");
+    newBlock.href = path;
+    newBlock.rel = "stylesheet";
+    newBlock.type = "text/css";
+    document.getElementsByTagName("head")[0].appendChild(newBlock);
 }

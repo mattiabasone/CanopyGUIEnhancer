@@ -1,3 +1,25 @@
+function loadExtensionJS(relativePath) {
+    var newBlock = document.createElement("script");
+    newBlock.src = chrome.extension.getURL(relativePath);
+    newBlock.async = true;
+    newBlock.type = "text/javascript";
+    document.getElementsByTagName("body")[0].appendChild(newBlock);
+}
+
+function loadExtensionCSS(relativePath) {
+    var newBlock = document.createElement("link");
+    newBlock.href = chrome.extension.getURL(relativePath);
+    newBlock.rel = "stylesheet";
+    newBlock.type = "text/css";
+    document.getElementsByTagName("head")[0].appendChild(newBlock);
+}
+
+var JSFiles = [
+    'lib/Chart.min.js',
+    'utils.js',
+    'CanopyEnhancer.js'
+];
+
 chrome.storage.local.get(null, function (data) {
     
     var stylesheet = document.getElementsByTagName('link')[0];
@@ -30,6 +52,8 @@ chrome.storage.local.get(null, function (data) {
 
             if (settingsObj.cge_enabled === 1) {
 
+                settingsObj.ChartJSURL = chrome.extension.getURL('lib/Chart.min.js');
+
                 var s = document.createElement('script');
                 s.innerText = "document.CGESettings = '" + JSON.stringify(settingsObj) + "';";
                 s.onload = function () {
@@ -37,49 +61,15 @@ chrome.storage.local.get(null, function (data) {
                 };
                 (document.head || document.documentElement).appendChild(s);
 
-                var head = document.getElementsByTagName("head")[0];
-                var body = document.getElementsByTagName("body")[0];
-                var newBlock, path;
-
-                newBlock = document.createElement("link");
-                path = chrome.extension.getURL('css/style.css');
-                newBlock.href = path;
-                newBlock.rel = "stylesheet";
-                newBlock.type = "text/css";
-                head.appendChild(newBlock);
+                loadExtensionCSS('css/style.css');
 
                 if (settingsObj.cge_custom_css === 1) {
-                    newBlock = document.createElement("link");
-                    path = chrome.extension.getURL('css/bootstrap-mini.css');
-                    newBlock.href = path;
-                    newBlock.rel = "stylesheet";
-                    newBlock.type = "text/css";
-                    head.appendChild(newBlock);
-
-                    newBlock = document.createElement("link");
-                    path = chrome.extension.getURL('css/gui.css');
-                    newBlock.href = path;
-                    newBlock.rel = "stylesheet";
-                    newBlock.type = "text/css";
-                    head.appendChild(newBlock);
+                    loadExtensionCSS('css/bootstrap-mini.css');
+                    loadExtensionCSS('css/gui.css');
                 }
 
-                newBlock = document.createElement("script");
-                path = chrome.extension.getURL('lib/Chart.min.js');
-                newBlock.src = path;
-                newBlock.type = "text/javascript";
-                if (head.appendChild(newBlock)) {
-                    newBlock = document.createElement("script");
-                    path = chrome.extension.getURL('utils.js');
-                    newBlock.src = path;
-                    newBlock.type = "text/javascript";
-                    if (head.appendChild(newBlock)) {
-                        newBlock = document.createElement("script");
-                        path = chrome.extension.getURL('CanopyEnhancer.js');
-                        newBlock.src = path;
-                        newBlock.type = "text/javascript";
-                        body.appendChild(newBlock);
-                    }
+                for (var k = 0; k < JSFiles.length; k++) {
+                    loadExtensionJS(JSFiles[k]);
                 }
             }
         }

@@ -67,9 +67,11 @@ var CanopyEnhancer = function() {
             10: "DFS Status"
         }
     };
+
     this.Sections[1] = {
         name: "Configuration"
     };
+
     this.Sections[2] = {
         name: "Statistics",
         pages: {
@@ -82,24 +84,29 @@ var CanopyEnhancer = function() {
             20: "ARP"
         }
     };
+
     this.Sections[3] = {
         name: "Tool",
         pages:{
             4: "AP Evaluation"
         }
     };
+
     this.Sections[5] = {
         name: "Logs",
         pages: {
             9: "NAT Table"
         }
     };
+
     this.Sections[6] = {
         name: "Accounts"
     };
+
     this.Sections[8] = {
         name: "PDA"
     };
+
     this.Sections[9] = {
         name: "Copyright"
     };
@@ -264,10 +271,14 @@ CanopyEnhancer.prototype.initialize = function() {
                 if (resDevType != null) {
                     this.currentRadioModulation = 'SISO_OFDM';
                 } else {
-                    resDevType = titleString.match(/.*(?:GHz|MHz)\sMIMO\sOFDM\s\-\s([a-zA-Z\-\s]+)\s\-\s([A-Fa-f0-9\-]{17})/);
+                    resDevType = titleString.match(/.*(?:GHz|MHz)\sMIMO\sOFDM\s\-\s([a-zA-Z\-\s]+)(?:\s\-\s|\n)([A-Fa-f0-9\-]{17})/);
                 }
             }
-            this.getDevType(resDevType[1]);
+            if (resDevType != null) {
+                this.getDevType(resDevType[1]);
+            } else {
+                this.currentRadioType = "SM";
+            }
         } else {
             if (_this.debugMessages() === true) {
                 console.log("Title not found");
@@ -283,7 +294,14 @@ CanopyEnhancer.prototype.initialize = function() {
         this.getRefreshTime();
 
         // Site name in title
-        document.querySelector('#page > h1').innerHTML = '<strong class="cge-color-blue-cambium">'+this.getSiteNameTitle()+':</strong> '+document.querySelector('#page > h1').innerHTML;
+        var strongSiteName = document.createElement('strong');
+        strongSiteName.className = 'cge-color-blue-cambium';
+        strongSiteName.appendChild(document.createTextNode(this.getSiteNameTitle()+': '));
+
+        document.querySelector('#page > h1').insertBefore(
+            strongSiteName,
+            document.querySelector('#page > h1').firstChild
+        );
 
         if (_this.debugMessages() === true) {
             console.log("CGE Enabled!");
@@ -392,7 +410,7 @@ CanopyEnhancer.prototype.SetUpAJAX = function() {
                                     if (id) {
                                         var parent = document.getElementById(id);
                                         if (parent) {
-                                            parent.innerHTML = htmlCode;
+                                            parent.innerHTML = escapeHTML(htmlCode);
                                             if (document.createEvent) {
                                                 var event = document.createEvent("Event");
                                                 event.initEvent("change", true, true);
@@ -578,9 +596,15 @@ CanopyEnhancer.prototype.homePageRender = function () {
         linkStatusBlock = document.getElementById("LinkStatusMain");
     }
 
-    var linkStatus = linkStatusBlock.innerText;
+    var linkStatus = linkStatusBlock.textContent;
     if (linkStatus !== '100Base-TX Full Duplex' && linkStatus !== '1000Base-T Full Duplex') {
-        linkStatusBlock.innerHTML = ' <span class="cge-warning">'+linkStatusBlock.innerHTML +'</span>'
+
+        var spanEthWarn = document.createElement('span');
+        spanEthWarn.className = 'cge-warning';
+        spanEthWarn.appendChild(document.createTextNode(linkStatusBlock.textContent));
+
+        linkStatusBlock.innerHTML = '';
+        linkStatusBlock.appendChild(spanEthWarn);
     }
 
     var distanceBlock = document.getElementById('Distance');
@@ -588,7 +612,7 @@ CanopyEnhancer.prototype.homePageRender = function () {
         var milesRegex = distanceBlock.innerText.match(/(([0-9]{1,2})\.([0-9]{0,3}))\smiles/);
         if (milesRegex !== null) {
             var km = parseFloat(milesRegex[1]) * 1.60934;
-            distanceBlock.innerText += ' - '+km.toFixed(3)+' kilometres';
+            distanceBlock.appendChild(document.createTextNode(' - '+km.toFixed(3)+' kilometres'));
         }
     }
 
@@ -744,6 +768,10 @@ CanopyEnhancer.prototype.realTimeTraffic = function() {
 
                 };
 
+                if (typeof Chart !== 'function') {
+                    loadCSS(this.settings.ChartJSURL);
+                }
+
                 var ctx = document.getElementById("RTGChart").getContext("2d");
                 this.realTimeTrafficChart = new Chart(ctx).Line(chartData, chartOpt);
                 document.getElementById('RTGLegend').innerHTML = this.realTimeTrafficChart.generateLegend();
@@ -809,11 +837,11 @@ CanopyEnhancer.prototype.updateTrafficData = function (currInOctets, currOutOcte
             );
             this.realTimeTrafficChart.removeData();
 
-            document.getElementById('legend-InterfaceTrafficIn').innerHTML = this.trafficData.inTraffic.toString();
-            document.getElementById('legend-InterfaceTrafficOut').innerHTML = this.trafficData.outTraffic.toString();
+            document.getElementById('legend-InterfaceTrafficIn').textContent = this.trafficData.inTraffic.toString();
+            document.getElementById('legend-InterfaceTrafficOut').textContent = this.trafficData.outTraffic.toString();
         } else {
-            document.getElementById('cge-CurrInTraffic').innerHTML = this.trafficData.inTraffic.toString();
-            document.getElementById('cge-CurrOutTraffic').innerHTML = this.trafficData.outTraffic.toString();
+            document.getElementById('cge-CurrInTraffic').textContent = this.trafficData.inTraffic.toString();
+            document.getElementById('cge-CurrOutTraffic').textContent = this.trafficData.outTraffic.toString();
         }
 
     } else {
@@ -1005,7 +1033,7 @@ CanopyEnhancer.prototype.renderBetterEvaluationTemplate = function() {
         evaluationContent += '</table></tbody>';
     }
 
-    betterEvalBlock.innerHTML = evaluationContent;
+    betterEvalBlock.innerHTML = escapeHTML(evaluationContent);
     this.apEvaluationBlock.style.display = 'none';
 };
 
@@ -1061,7 +1089,8 @@ CanopyEnhancer.prototype.MACLookUp = function(block) {
                 } else {
                     attrContent = "Error, no result";
                 }
-                _this.tooltipMACNode.innerHTML = attrContent;
+
+                _this.tooltipMACNode.innerText = attrContent;
                 _this.tooltipMACNode.style.display = 'block';
                 var tooltipRect = _this.tooltipMACNode.getBoundingClientRect();
                 _this.tooltipMACNode.style.top = ( (blockRect.top + document.body.scrollTop) - (tooltipRect.height) - 5) + "px";
@@ -1111,7 +1140,7 @@ CanopyEnhancer.prototype.MACLookupTooltip = function() {
  * ARP Page processing
  */
 CanopyEnhancer.prototype.MacLookupPage = function() {
-    if ((this.currentCatIndex == 2 && (this.currentPageIndex == 20 || this.currentPageIndex == 5)) && (this.settings.cge_mac_lookup == 1)) {
+    if ((this.currentCatIndex == 2 && (this.currentPageIndex == 20 || this.currentPageIndex == 5 || this.currentPageIndex == 21)) && (this.settings.cge_mac_lookup == 1)) {
         this.MACLookupTooltip();
         this.addMACLookUpListener('#page');
     }
@@ -1144,10 +1173,10 @@ CanopyEnhancer.prototype.IPLookUp = function(block) {
                     console.log(data);
                 }
                 if (data.ip !== 'undefined') {
-                    attrContent = "AS: " + data.org + "<br />";
-                    attrContent += "Country: " + data.country +"<br />";
-                    attrContent += "Region: " + data.region+ "<br />";
-                    attrContent += "City: " + data.city+ "<br />";
+                    attrContent = "AS: " + data.org + "\n";
+                    attrContent += "Country: " + data.country +"\n";
+                    attrContent += "Region: " + data.region+ "\n";
+                    attrContent += "City: " + data.city+ "\n";
                     attrContent += "Hostname: " + data.hostname;
                 } else {
                     attrContent = "Error, no result";
@@ -1156,7 +1185,8 @@ CanopyEnhancer.prototype.IPLookUp = function(block) {
                 // Error
                 attrContent = "Error, no result";
             }
-            _this.tooltipIPNode.innerHTML = attrContent;
+
+            _this.tooltipIPNode.innerText = attrContent;
             _this.tooltipIPNode.style.display = 'block';
             var tooltipRect = _this.tooltipIPNode.getBoundingClientRect();
             _this.tooltipIPNode.style.top = ( (blockRect.top + document.body.scrollTop) - (tooltipRect.height) - 5) + "px";
@@ -1400,11 +1430,11 @@ CanopyEnhancer.prototype.APDataVCCalc = function() {
 
         for(var i = 0; i <  rows.length; i++) {
             var LUID, VCType;
-            if (rows[i].querySelector('td:nth-child(1)').innerText.length === 3) {
-                LUID = intval(rows[i].querySelector('td:nth-child(1)').innerText);
+            if (rows[i].querySelector('td:nth-child(1)').textContent.length === 3) {
+                LUID = intval(rows[i].querySelector('td:nth-child(1)').textContent);
                 VCType = 'high';
             } else {
-                LUID = intval(rows[i].querySelector('td:nth-child(2)').innerText)
+                LUID = intval(rows[i].querySelector('td:nth-child(2)').textContent)
                 var htmlSMName = rows[i].querySelector('td:nth-child(1)').innerHTML;
                 htmlSMName = htmlSMName.replace(/\s\-\sLUID\:/, '<br />LUID:');
                 rows[i].querySelector('td:nth-child(1)').innerHTML = htmlSMName;
@@ -1415,13 +1445,13 @@ CanopyEnhancer.prototype.APDataVCCalc = function() {
 
             if (LUID <= 255) {
                 var InTraffic, OutTraffic, InUPPS, InNuPPS, OutUPPS, OutNuPPS;
-                var currInOctets = intval(rows[i].querySelector('td:nth-child('+tableChild[VCType].currInOctets+')').innerText);
-                var currOutOctets = intval(rows[i].querySelector('td:nth-child('+tableChild[VCType].currOutOctets+')').innerText);
+                var currInOctets = intval(rows[i].querySelector('td:nth-child('+tableChild[VCType].currInOctets+')').textContent);
+                var currOutOctets = intval(rows[i].querySelector('td:nth-child('+tableChild[VCType].currOutOctets+')').textContent);
 
-                var currInUPackets = intval(rows[i].querySelector('td:nth-child('+tableChild[VCType].currInUPackets+')').innerText);
-                var currInNuPackets = intval(rows[i].querySelector('td:nth-child('+tableChild[VCType].currInNuPackets+')').innerText);
-                var currOutUPackets = intval(rows[i].querySelector('td:nth-child('+tableChild[VCType].currOutUPackets+')').innerText);
-                var currOutNuPackets = intval(rows[i].querySelector('td:nth-child('+tableChild[VCType].currOutNuPackets+')').innerText);
+                var currInUPackets = intval(rows[i].querySelector('td:nth-child('+tableChild[VCType].currInUPackets+')').textContent);
+                var currInNuPackets = intval(rows[i].querySelector('td:nth-child('+tableChild[VCType].currInNuPackets+')').textContent);
+                var currOutUPackets = intval(rows[i].querySelector('td:nth-child('+tableChild[VCType].currOutUPackets+')').textContent);
+                var currOutNuPackets = intval(rows[i].querySelector('td:nth-child('+tableChild[VCType].currOutNuPackets+')').textContent);
 
                 if (this.APThroughputSM[LUID] !== undefined) {
                     /**

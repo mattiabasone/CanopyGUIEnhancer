@@ -10,38 +10,38 @@ var formFields = [
     'cge_debug'
 ];
 
-chrome.storage.local.get(null, function(data) {
-
-    if (chrome.runtime.lastError || !data.hasOwnProperty('cge_enabled')) {
-
-        for (var i=0;i<formFields.length;i++) {
-            var settingsInput = document.getElementById(formFields[i]);
-            if (settingsInput.type == 'checkbox') {
-                settingsInput.checked = true;
-            }
-        }
-
-    } else {
-        for (var key in data) {
-            if (!data.hasOwnProperty(key)) continue;
-            var settingsInput = document.getElementById(key);
-            switch (settingsInput.type) {
-                case 'checkbox':
-                    if (data[key] === 1 || data[key] === undefined) {
-                        settingsInput.checked = true;
-                    } else {
-                        settingsInput.checked = false;
-                    }
-                    break;
-                default:
-                    settingsInput.value = data[key];
-                    break;
-            }
-        }
-    }
-});
-
 window.onload = function() {
+
+    chrome.storage.local.get(null, function(data) {
+        var settingsInput;
+        if (chrome.runtime.lastError || !data.hasOwnProperty('cge_enabled')) {
+            for (var i=0;i<formFields.length;i++) {
+                settingsInput = document.getElementById(formFields[i]);
+                if (settingsInput.type == 'checkbox') {
+                    settingsInput.checked = true;
+                }
+            }
+
+        } else {
+            for (var key in data) {
+                if (!data.hasOwnProperty(key)) continue;
+                settingsInput = document.getElementById(key);
+                switch (settingsInput.type) {
+                    case 'checkbox':
+                        if (data[key] === 1 || data[key] === undefined) {
+                            settingsInput.checked = true;
+                        } else {
+                            settingsInput.checked = false;
+                        }
+                        break;
+                    default:
+                        settingsInput.value = data[key];
+                        break;
+                }
+            }
+        }
+    });
+
     var formSettings = document.forms.cge_form_settings;
 
     formSettings.addEventListener("submit", function(e) {

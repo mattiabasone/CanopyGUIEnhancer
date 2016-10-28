@@ -11,7 +11,7 @@ The extension has been tested on the following software versions, with old versi
 
 * PMP100: 13.4.1
 * PMP430: 13.4.1
-* PMP450: 14.1.1
+* PMP450: 15.0.0.1
 
 ## Features
 
@@ -31,9 +31,16 @@ The extension has been tested on the following software versions, with old versi
 * Added Site Name in the h1 tag on each page
 * Added Changelog button (settings popup)
 * Renamed background.js in content_loader.js
+* Added EscapeHTML on SetupAjax (does not pass review on Firefox Add-On platform)
 * [Bugfix] Console error in content_loader.js
 * [Bugfix] AP Throughput page does not work with 14.2
 * [Bugfix] Ethernet link speed check does not work on 14.2
+* [Bugfix] Saved settings does not load in the popup on Firefox
+* [Bugfix] Fixed wrong font style (Firefox)
+* [Bugfix] MAC Address lookup does not work on 14.2/14.2.1
+* [Bugfix] Extension does not work on 14.2/14.2.1 2.4GHz PMP450
+* [Bugfix] Removed some innerHTML
+* [Bugfix] Code cleaning
 
 ### Version 1.7
 
