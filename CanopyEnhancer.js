@@ -318,6 +318,8 @@ CanopyEnhancer.prototype.initialize = function() {
         _this.NATTable();
         _this.APThroughput();
         _this.APDataVC();
+        _this.EventLog();
+        _this.sessionStatus();
     }
 };
 
@@ -569,6 +571,60 @@ CanopyEnhancer.prototype.getCurrentPageName = function() {
     }
 };
 
+/**
+ * CSS class based on signal power
+ * @param signal
+ * @returns {*}
+ */
+CanopyEnhancer.prototype.getSignalPowerClass = function(signal) {
+    var cellClass;
+    if (signal > -70) {
+        cellClass = 'cge-good-power-level';
+    } else if (signal <= -70 && signal > -80) {
+        cellClass = 'cge-decent-power-level';
+    } else {
+        cellClass = 'cge-bad-power-level';
+    }
+    return cellClass;
+};
+
+/**
+ * CSS class based on SNR
+ * @param h
+ * @param v
+ * @returns {*}
+ */
+CanopyEnhancer.prototype.getSNRClass = function(v, h) {
+    var cellClass;
+
+    v = intval(v);
+    h = intval(h);
+
+    if (h > 0 && v > 0) {
+        var sumratio = (v + h) / 2;
+        if (sumratio > 24) {
+            cellClass = 'cge-good-power-level';
+        } else if (sumratio <= 24 && sumratio > 12) {
+            cellClass = 'cge-decent-power-level';
+        } else {
+            cellClass = 'cge-bad-power-level';
+        }
+    } else {
+        cellClass = 'cge-bad-power-level';
+    }
+
+    return cellClass;
+};
+
+/**
+ * CSS class based on signal power
+ * @param signal
+ * @returns {*}
+ */
+CanopyEnhancer.prototype.getAdaptRateClass = function(adaptRate) {
+    return 'cge-adapt-rate-color-'+adaptRate;
+};
+
 /** ======================================================================
  *  =Homepage
  ** ======================================================================*/
@@ -614,6 +670,62 @@ CanopyEnhancer.prototype.homePageRender = function () {
             var km = parseFloat(milesRegex[1]) * 1.60934;
             distanceBlock.appendChild(document.createTextNode(' - '+km.toFixed(3)+' kilometres'));
         }
+    }
+
+    switch (this.currentRadioModulation) {
+        case 'MIMO_OFDM':
+            var span;
+            var PowerLevelOFDM = document.getElementById('PowerLevelOFDM');
+            if (PowerLevelOFDM != null) {
+                var signal = PowerLevelOFDM.innerText;
+                signal = parseFloat(signal.replace(" dBm", ""));
+
+                PowerLevelOFDM.innerHTML = '';
+                span = document.createElement('span');
+                span.className = this.getSignalPowerClass(signal);
+                span.appendChild(document.createTextNode(signal+' dBm'));
+                PowerLevelOFDM.appendChild(span);
+
+            }
+
+            var SignalToNoiseRatioSM = document.getElementById('SignalToNoiseRatioSM');
+            if (SignalToNoiseRatioSM != null) {
+                var CSSClass = "";
+                var SNRText = SignalToNoiseRatioSM.innerText;
+                var matchSNR = SNRText.match(/([\d]+)\sV\s\/\s([\d]+)\sH\sdB/);
+
+                if (matchSNR) {
+                    CSSClass = this.getSNRClass(matchSNR[1], matchSNR[2]);
+                } else {
+                    matchSNR = SNRText.match(/([\d]+)\sdB\sMIMO\-(?:[A-B])/);
+                    if (matchSNR) {
+                        CSSClass = this.getSNRClass(matchSNR[1], 0);
+                    }
+                }
+
+                if (CSSClass != "") {
+                    SignalToNoiseRatioSM.innerHTML = '';
+                    span = document.createElement('span');
+                    span.className = CSSClass;
+                    span.appendChild(document.createTextNode(SNRText));
+                    SignalToNoiseRatioSM.appendChild(span);
+                }
+
+            }
+
+            var SessionRate = document.getElementById('SesRate');
+            if (SessionRate) {
+                var match = SessionRate.innerText.match(/VC\s{1,2}(?:[\d]{1,3})\sRate\s(?:\d)X\/(\d)X\s([A-Z\-]+)/i);
+                if (match) {
+                    SessionRate.innerHTML = "";
+                    span = document.createElement('span');
+                    span.className = this.getAdaptRateClass(match[1]);
+                    span.appendChild(document.createTextNode(match[0]));
+                    SessionRate.appendChild(span);
+                }
+            }
+
+            break;
     }
 
     // Move site info box
@@ -1530,6 +1642,90 @@ CanopyEnhancer.prototype.APDataVCCalc = function() {
         }
     }
 };
+
+/** ======================================================================
+ *  =EventLog
+ ** ======================================================================*/
+
+CanopyEnhancer.prototype.EventLog = function() {
+    if (this.currentCatIndex == 0 && this.currentPageIndex == 5) {
+        var ContentBlock = document.getElementById('SysLoga');
+        var splittedLog = ContentBlock.innerHTML.split("******System Startup******");
+
+        var logwrapper = document.createElement('div');
+        logwrapper.id = 'cge-event-log-wrapper';
+
+        var div, table, tbody, tr, td;
+
+        div = document.createElement('div');
+        div.className = 'cge-event-log-divider';
+        table = document.createElement('table');
+        table.className = 'table table-striped table-responsive table-condensed';
+        tbody = document.createElement('tbody');
+
+        for (var i = 0; i < splittedLog.length; i++) {
+
+            var rows = splittedLog[i].split("<br>");
+
+            for (var k = 0; k < rows.length; k++) {
+                if (rows[k] != "" && rows[k] != " ") {
+                    tr = document.createElement('tr');
+                    td = document.createElement('td');
+
+                    rows[k] = rows[k].replace('&lt;br /&gt;', "<br />");
+                    td.appendChild(document.createTextNode(rows[k]));
+                    tr.appendChild(td);
+                    tbody.appendChild(tr);
+                }
+            }
+
+            if (i < splittedLog.length - 1) {
+
+                table.appendChild(tbody);
+                div.appendChild(table);
+                logwrapper.appendChild(div);
+
+                div = document.createElement('div');
+                div.className = 'cge-event-log-divider';
+                table = document.createElement('table');
+                table.className = 'table table-striped table-responsive table-condensed';
+                tbody = document.createElement('tbody');
+
+                var h4 = document.createElement('h4');
+                h4.className = 'cge-block-title';
+                h4.appendChild(document.createTextNode("******System Startup******"));
+                div.appendChild(h4);
+            }
+        }
+        ContentBlock.innerHTML = "";
+        ContentBlock.appendChild(logwrapper);
+        ContentBlock.innerHTML = ContentBlock.innerHTML.replace(/(FatalError\(\))/gi,"<span class='cge-bad-power-level'>$1</span>");
+        ContentBlock.innerHTML = ContentBlock.innerHTML.replace(/(Watchdog Reset)/gi,"<span class='cge-bad-power-level'>$1</span>");
+        ContentBlock.innerHTML = ContentBlock.innerHTML.replace(/(ADI Communication Failure)/gi,"<span class='cge-bad-power-level'>$1</span>");
+    }
+};
+
+
+/** ======================================================================
+ *  =EventLog
+ ** ======================================================================*/
+
+CanopyEnhancer.prototype.sessionStatus = function() {
+    if (this.currentCatIndex == 0 && this.currentPageIndex == 2) {
+        var sessionTable = document.getElementById('luidlisttable_3');
+        var match = sessionTable.innerHTML.match(/VC\s{1,2}(?:[\d]{1,3})\sRate\s(?:\d)X\/(\d)X\s([A-Z\-]+)/igm);
+        if (match) {
+            for (var i = 0; i < match.length; i++) {
+                var match_inner = match[i].match(/VC\s{1,2}(?:[\d]{1,3})\sRate\s(?:\d)X\/(\d)X\s([A-Z\-]+)/i);
+                var adaptRate = intval(match_inner[1]);
+                var CSSClass = this.getAdaptRateClass(adaptRate);
+                sessionTable.innerHTML = sessionTable.innerHTML.replace(match_inner[0], '<span class="'+CSSClass+'">'+match_inner[0]+'</span>');
+            }
+        }
+    }
+};
+
+
 
 var CGE;
 CGE = new CanopyEnhancer();

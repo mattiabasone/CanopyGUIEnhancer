@@ -4,7 +4,7 @@ body {
     height: 100%;
     margin: 0;
     padding: 0;
-    font-family: sans-serif;
+    font-family: Arial, sans-serif;
 }
 
 .cge-color-blue-cambium {
@@ -40,6 +40,12 @@ body {
     color:white;
 }
 
+.cge-block-title {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+}
+
 /** =apevaluation **/
 
 .cge-ap-evaluation-entry-title {
@@ -67,6 +73,31 @@ body {
 
 .cge-bad-power-level {
     color: #B71C1C;
+}
+
+/* =adaptRate */
+.cge-adapt-rate-color-1 {
+    color: #B71C1C;
+}
+
+.cge-adapt-rate-color-2 {
+    color: #FF5722;
+}
+
+.cge-adapt-rate-color-3 {
+    color: #FF9800;
+}
+
+.cge-adapt-rate-color-4 {
+    color: #FFA000;
+}
+
+.cge-adapt-rate-color-6 {
+    color: #AFB42B;
+}
+
+.cge-adapt-rate-color-8 {
+    color: #388E3C;
 }
 
 /** =popup **/
@@ -139,4 +170,33 @@ body {
 /* =graphs */
 #RTGWrapper {
     padding:15px;
+}
+
+/* =eventlog */
+
+#SectionEventLog table.section {
+    width: auto !important;
+}
+
+#cge-event-log-wrapper {
+
+}
+
+.cge-event-log-divider {
+    padding:10px;
+    background-color: #EAEAEA;
+    margin-top: 10px;
+    border: 1px solid #d0d0d0;
+}
+
+.cge-event-log-divider .table {
+    margin-bottom: 0;
+    font-size: 0.94em;
+    background-color: #EAEAEA;
+    width: 100%;
+}
+
+.cge-event-log-divider .table td {
+    background-color: #EAEAEA;
+    border-top: 1px solid #d0d0d0;
 }

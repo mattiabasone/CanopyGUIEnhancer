@@ -9,6 +9,11 @@ h2.sectiontitle {
     border-color: transparent;
     padding: 4px;
     margin-bottom: 5px;
+    font-size: 102%;
+}
+
+h2.sectiontitle .sectiontitletext {
+    text-transform: uppercase;
 }
 
 a, a:link, a:visited {
@@ -70,19 +75,35 @@ div#menu {
     box-shadow: none;
     -moz-box-shadow: none;
     -webkit-box-shadow: none;
+    position: relative;
+    padding-top: 20px;
+}
+
+div#menu div:first-child {
+    position: absolute;
+    top: 2px;
+    right: 5px;
 }
 
 div#menu a {
+    list-style-type: none;
     text-decoration: none;
     font-weight: normal;
+    margin-left: -1em;
+    margin-right: -1em;
+    text-align: center;
+    padding-top: 2px;
+    padding-bottom: 2px;
 }
 
 div#menu a:hover {
-    color: #EADD5A;
+    color: #003D79;
+    background-color: white;
 }
 
 div#menu a#menuselect {
-    color: #EAAC5A;
+    color: #003D79;
+    background-color: white;
 }
 
 div.section {

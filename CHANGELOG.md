@@ -1,3 +1,11 @@
+## Version 1.8.4
+
+Changes:
+* Added colors for signal, SNR and Adapt Rate in homepage
+* Added colors for Adapt Rate in the Session Status page
+* Improved Event Log formatting
+* Changed menu styles
+
 ## Version 1.8.3
 
 Bugfixes
