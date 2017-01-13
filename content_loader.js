@@ -43,6 +43,7 @@ chrome.storage.local.get(null, function (data) {
                     cge_ap_evaluation: 1,
                     cge_ap_throughput: 1,
                     cge_ap_data_vc: 1,
+                    cge_theme: 'default',
                     cge_debug: 0
                 };
                 chrome.storage.local.set(settingsObj);
@@ -66,6 +67,9 @@ chrome.storage.local.get(null, function (data) {
                 if (settingsObj.cge_custom_css === 1) {
                     loadExtensionCSS('css/bootstrap-mini.css');
                     loadExtensionCSS('css/gui.css');
+                    if (settingsObj.cge_theme != 'default') {
+                        loadExtensionCSS('css/themes/'+settingsObj.cge_theme+'.css');
+                    }
                 }
 
                 for (var k = 0; k < JSFiles.length; k++) {

@@ -15,7 +15,7 @@ body {
     background-color: #003D79 !important;
 }
 
-.cge-bg-blue-light, td.cge-bg-blue-light {
+.cge-bg-blue-light {
     background-color: rgba(0, 152, 255, 0.15) !important;
 }
 
@@ -33,6 +33,13 @@ body {
 
 .cge-real-time-throughput {
     font-weight: bold;
+}
+
+.cge-graph-legend-entry {
+    display: inline-block;
+    width:10px;
+    height:10px;
+    margin-right:5px;
 }
 
 .cge-highlight {
@@ -75,29 +82,25 @@ body {
     color: #B71C1C;
 }
 
-/* =adaptRate */
-.cge-adapt-rate-color-1 {
+.cge-highlight-eval-entry {
+    background-color: rgba(0, 152, 255, 0.15) !important;
+}
+
+/* =adaptRate .betterlink, .avglink, .bestlink, .poorlink */
+.cge-poorlink-text {
     color: #B71C1C;
 }
 
-.cge-adapt-rate-color-2 {
-    color: #FF5722;
-}
-
-.cge-adapt-rate-color-3 {
-    color: #FF9800;
-}
-
-.cge-adapt-rate-color-4 {
+.cge-avglink-text {
     color: #FFA000;
 }
 
-.cge-adapt-rate-color-6 {
-    color: #AFB42B;
+.cge-betterlink-text {
+    color: #388E3C;
 }
 
-.cge-adapt-rate-color-8 {
-    color: #388E3C;
+.cge-bestlink-text {
+    color: #03A9F4;
 }
 
 /** =popup **/
@@ -178,8 +181,8 @@ body {
     width: auto !important;
 }
 
-#cge-event-log-wrapper {
-
+#cge-event-log-wrapper .cge-event-log-divider:last-child {
+    margin-bottom: 10px;
 }
 
 .cge-event-log-divider {

@@ -208,3 +208,24 @@ function loadCSS(path) {
     newBlock.type = "text/css";
     document.getElementsByTagName("head")[0].appendChild(newBlock);
 }
+
+
+function highlightErrorsInText(searchText, text) {
+    var returnText;
+    var tmpRegExp = new RegExp("("+RegExp.quote(searchText)+")", 'gi');
+    returnText = text.replace(tmpRegExp,"<span class='cge-bad-power-level'>$1</span>");
+    return returnText;
+}
+
+/**
+ * JS Extension
+ */
+
+/**
+ * Empty element content
+ */
+Element.prototype.emptyElement = function() {
+    while (this.firstChild) {
+        this.removeChild(this.firstChild);
+    }
+};

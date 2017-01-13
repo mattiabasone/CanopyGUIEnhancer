@@ -7,6 +7,7 @@ var formFields = [
     'cge_ap_evaluation',
     'cge_ap_throughput',
     'cge_ap_data_vc',
+    'cge_theme',
     'cge_debug'
 ];
 
@@ -26,17 +27,24 @@ window.onload = function() {
             for (var key in data) {
                 if (!data.hasOwnProperty(key)) continue;
                 settingsInput = document.getElementById(key);
-                switch (settingsInput.type) {
-                    case 'checkbox':
-                        if (data[key] === 1 || data[key] === undefined) {
-                            settingsInput.checked = true;
-                        } else {
-                            settingsInput.checked = false;
+                if (settingsInput !== null) {
+                    var tagName = settingsInput.tagName.toLowerCase();
+                    if (tagName == 'input') {
+                        switch (settingsInput.type) {
+                            case 'checkbox':
+                                if (data[key] === 1 || data[key] === undefined) {
+                                    settingsInput.checked = true;
+                                } else {
+                                    settingsInput.checked = false;
+                                }
+                                break;
+                            default:
+                                settingsInput.value = data[key];
+                                break;
                         }
-                        break;
-                    default:
+                    } else {
                         settingsInput.value = data[key];
-                        break;
+                    }
                 }
             }
         }

@@ -1,3 +1,18 @@
+## Version 1.8.6
+
+Changes:
+* Added dark theme
+* Changed menu styles
+
+Bugfixes:
+* Removed Spaghetti
+
+## Version 1.8.5
+
+Bugfixes:
+* Event Log is empty if it doesn't contains "System Startup" string
+* Menu glitches
+
 ## Version 1.8.4
 
 Changes:
