@@ -6,6 +6,11 @@ var CanopyEnhancer = function() {
     this.refreshTime = 0;
     this.tooltipMACNode = {};
     this.tooltipIPNode = {};
+
+    /**
+     * Default settings
+     * @type {{cge_enabled: number, cge_custom_css: number, cge_ip_lookup: number, cge_mac_lookup: number, cge_ap_evaluation: number, cge_ap_throughput: number, cge_ap_data_vc: number, cge_rtt_type: string, cge_debug: number}}
+     */
     this.settings = {
         cge_enabled: 1,
         cge_custom_css: 1,
@@ -17,14 +22,17 @@ var CanopyEnhancer = function() {
         cge_rtt_type: 'string',
         cge_debug : 0
     };
+
     this.intervalsTimeout = 0;
     this.currentCatIndex = -1;
     this.currentPageIndex = -1;
     this.currentRadioMAC = "000000000000";
     this.currentRadioModulation = "MIMO_OFDM";
+    this.isMedusa = false;
+    this.medusaObserver = null;
 
-    /**
-     * Traffic
+    /*
+     * =Traffic
      */
     this.mainTrafficBlockID = null;
     this.inTrafficID = null;
@@ -38,8 +46,8 @@ var CanopyEnhancer = function() {
         outTraffic: 0
     };
 
-    /**
-     * AP Evaluation
+    /*
+     * =AP_Evaluation
      */
     this.apEvaluationBlock = document.getElementById('APEval'); // #APEval
     this.APEvaluationObj = [];
@@ -48,13 +56,13 @@ var CanopyEnhancer = function() {
     this.currentSessionStatus = "";
     this.currentlyScanning = "";
 
-    /**
-     * AP SM Throughput
+    /*
+     * =AP SM Throughput
      */
     this.APThroughputSM = {};
 
-    /**
-     * Sections
+    /*
+     * =Sections
      */
     this.Sections = [];
     this.Sections[0] = {
@@ -79,8 +87,8 @@ var CanopyEnhancer = function() {
             9: "Radio",
             11: "Data VC",
             12: "Throughput",
-            // 13: "Throughput", // From version 14.2
-            15: "NAT DHCP",
+            15: "NAT Stats",
+            16: "NAT DHCP",
             20: "ARP"
         }
     };
@@ -254,6 +262,19 @@ var CanopyEnhancer = function() {
         'ADI Communication Failure',
         'ADI forced reset has been invoked!'
     ];
+
+    this.soundingStatsFields = [
+        'VC',
+        'reference SF:',
+        'soundingState',
+        'soundingFault',
+        'mumimoVetoCount',
+        'channelDistortion',
+        'nullingSNR',
+        'cnResponseCountSM',
+        'cnResponseCountAP',
+        'missedTagCount'
+    ];
 };
 
 /**
@@ -261,7 +282,7 @@ var CanopyEnhancer = function() {
  */
 CanopyEnhancer.prototype.initialize = function() {
     this.getRadioMac();
-    if (this.currentRadioMAC != '000000000000') {
+    if (this.currentRadioMAC !== '000000000000') {
 
         this.loadSettings();
 
@@ -269,19 +290,30 @@ CanopyEnhancer.prototype.initialize = function() {
         var title = page.querySelector("h2");
         if (title !== null) {
             var titleString = title.textContent;
+            var deviceType = null;
             var resDevType = titleString.match(/.*(?:GHz|MHz)(?:\sAdjustable\sPower)?\s\-\s([a-zA-Z\-\s]+)\s\-\s([A-Fa-f0-9\-]{17})/);
-            if (resDevType != null) {
+
+            if (resDevType !== null) {
+                deviceType = resDevType[1];
                 this.currentRadioModulation = 'FSK';
             } else {
                 resDevType = titleString.match(/.*(?:GHz|MHz)\sSISO\sOFDM\s\-\s([a-zA-Z\-\s]+)\s\-\s([A-Fa-f0-9\-]{17})/);
-                if (resDevType != null) {
+                if (resDevType !== null) {
+                    deviceType = resDevType[1];
                     this.currentRadioModulation = 'SISO_OFDM';
                 } else {
-                    resDevType = titleString.match(/.*(?:GHz|MHz)\sMIMO\sOFDM\s\-\s([a-zA-Z\-\s]+)(?:\s\-\s|\n)([A-Fa-f0-9\-]{17})/);
+                    resDevType = titleString.match(/.*(?:GHz|MHz)\s(MU\-)?MIMO(?:\sOFDM)?\s\-\s([a-zA-Z\-\s]+)(?:\s\-\s|\n)([A-Fa-f0-9\-]{17})/);
+                    if (resDevType) {
+                        deviceType = resDevType[2];
+                        if (resDevType[1]) {
+                            this.isMedusa = true;
+                        }
+                    }
                 }
             }
-            if (resDevType != null) {
-                this.getDevType(resDevType[1]);
+
+            if (deviceType !== null) {
+                this.getDevType(deviceType);
             } else {
                 this.currentRadioType = "SM";
             }
@@ -312,8 +344,8 @@ CanopyEnhancer.prototype.initialize = function() {
         if (this.debugMessages() === true) {
             console.log("CGE Enabled!");
             console.log("Current radio MAC " + this.currentRadioMAC);
-            console.log("Current Section Category: " + this.getCurrentCatName());
-            console.log("Current Section Page: " + this.getCurrentPageName());
+            console.log("Current Section Category: " + this.getCurrentCatName()+" ("+this.currentCatIndex+")");
+            console.log("Current Section Page: " + this.getCurrentPageName()+" ("+this.currentPageIndex+")");
         }
 
         this.enhancedCSS();
@@ -384,7 +416,7 @@ CanopyEnhancer.prototype.SetUpAJAX = function() {
             var vars = [];
             var sections = getElementsByClassName(document, 'table', 'section');
             for (var j = 0; j < sections.length; j++) {
-                if (!sections[j].style.display || sections[j].style.display != "none") {
+                if (!sections[j].style.display || sections[j].style.display !== "none") {
                     vars = vars.concat(getElementsByClassName(sections[j], 'span', 'var'));
                 }
             }
@@ -398,8 +430,8 @@ CanopyEnhancer.prototype.SetUpAJAX = function() {
             request.send(params);
             request.onreadystatechange = function () {
                 var request = document.request;
-                if (request.readyState == 4) {
-                    if (request.status == 200) {
+                if (request.readyState === 4) {
+                    if (request.status === 200) {
                         if (request.responseXML) {
 
                             if (_this.isTrafficPage()) {
@@ -412,7 +444,7 @@ CanopyEnhancer.prototype.SetUpAJAX = function() {
                             var vars = request.responseXML.getElementsByTagName('var');
                             for (var i = 0; i < vars.length; i++) {
                                 var id = vars[i].getAttribute('id');
-                                if (id != RebootClass) {
+                                if (id !== RebootClass) {
                                     var htmlCode = '';
                                     if (vars[i].hasChildNodes())
                                         htmlCode = vars[i].firstChild.nodeValue;
@@ -454,7 +486,7 @@ CanopyEnhancer.prototype.SetUpAJAX = function() {
                             _this.APDataVCCalc();
                             _this.sessionStatus();
                         }
-                    } else if (request.status == 401) {
+                    } else if (request.status === 401) {
                         clearInterval(document.ajaxtimerid);
                         if (!document.rebootId)
                             window.location.reload();
@@ -475,7 +507,7 @@ CanopyEnhancer.prototype.SetUpAJAX = function() {
 CanopyEnhancer.prototype.getRadioMac = function() {
     var stylesheethref = document.getElementsByTagName('link')[0].getAttribute('href');
     var res = stylesheethref.match(/\_canopy\.css\?mac_esn\=([A-Fa-f0-9]{12})/);
-    if (res != null) {
+    if (res !== null) {
         this.currentRadioMAC = res[1].toUpperCase();
     } else {
         this.currentRadioMAC = '000000000000';
@@ -529,8 +561,8 @@ CanopyEnhancer.prototype.identifySection = function() {
     var match = window.location.href.match(/catindex\=([0-9]+).*pageindex\=([0-9]+)/);
     if (match != null) {
         if (match[1] && match[2]) {
-            this.currentCatIndex = match[1];
-            this.currentPageIndex = match[2];
+            this.currentCatIndex = Number(match[1]);
+            this.currentPageIndex = Number(match[2]);
         } else {
             this.currentCatIndex = 0;
             this.currentPageIndex = 1;
@@ -597,8 +629,8 @@ CanopyEnhancer.prototype.getSignalPowerClass = function(signal) {
 CanopyEnhancer.prototype.getSNRClass = function(v, h) {
     var cellClass;
 
-    v = intval(v);
-    h = intval(h);
+    v = Number(v);
+    h = Number(h);
 
     if (h > 0 && v > 0) {
         var sumratio = (v + h) / 2;
@@ -624,19 +656,21 @@ CanopyEnhancer.prototype.getSNRClass = function(v, h) {
  */
 CanopyEnhancer.prototype.getAdaptRateClass = function(adaptRate, modulation) {
 
+    adaptRate = Number(adaptRate);
+
     switch (modulation) {
         case 'MIMO-A':
         case 'SISO':
-            if (adaptRate == 1) {
+            if (adaptRate === 1) {
                 return 'cge-poorlink-text'
             }
-            if (adaptRate == 2) {
+            if (adaptRate === 2) {
                 return 'cge-avglink-text';
             }
-            if (adaptRate == 3) {
+            if (adaptRate === 3) {
                 return 'cge-betterlink-text';
             }
-            if (adaptRate == 4) {
+            if (adaptRate === 4) {
                 return 'cge-bestlink-text';
             }
             break;
@@ -658,16 +692,16 @@ CanopyEnhancer.prototype.getAdaptRateClass = function(adaptRate, modulation) {
     return '';
 };
 
-/** ======================================================================
+/* ======================================================================
  *  =Homepage
- ** ======================================================================*/
+ * ======================================================================*/
 
 /**
  * E' la homepage?
  * @returns {boolean}
  */
 CanopyEnhancer.prototype.ishomePage = function() {
-    return (this.currentCatIndex == 0 && this.currentPageIndex == 1);
+    return (this.currentCatIndex === 0 && this.currentPageIndex === 1);
 };
 
 /**
@@ -708,7 +742,7 @@ CanopyEnhancer.prototype.homePageRender = function () {
             case 'MIMO_OFDM':
                 var span;
                 var PowerLevelOFDM = document.getElementById('PowerLevelOFDM');
-                if (PowerLevelOFDM != null) {
+                if (PowerLevelOFDM !== null) {
                     var signal = PowerLevelOFDM.textContent;
                     signal = parseFloat(signal.replace(" dBm", ""));
 
@@ -721,7 +755,7 @@ CanopyEnhancer.prototype.homePageRender = function () {
                 }
 
                 var SignalToNoiseRatioSM = document.getElementById('SignalToNoiseRatioSM');
-                if (SignalToNoiseRatioSM != null) {
+                if (SignalToNoiseRatioSM !== null) {
                     var CSSClass = "";
                     var SNRText = SignalToNoiseRatioSM.textContent;
                     var matchSNR = SNRText.match(/([\d]+)\sV\s\/\s([\d]+)\sH\sdB/);
@@ -735,7 +769,7 @@ CanopyEnhancer.prototype.homePageRender = function () {
                         }
                     }
 
-                    if (CSSClass != "") {
+                    if (CSSClass !== "") {
                         SignalToNoiseRatioSM.emptyElement();
                         span = document.createElement('span');
                         span.className = CSSClass;
@@ -767,16 +801,24 @@ CanopyEnhancer.prototype.homePageRender = function () {
     }
 };
 
-/** ======================================================================
+/* ======================================================================
  *  =RealTimeTraffic
- ** ======================================================================*/
+ * ======================================================================*/
 
-
+/**
+ * Is radio traffic page? statistics -> ethernet/radio
+ * @returns {boolean}
+ */
 CanopyEnhancer.prototype.isTrafficPage = function() {
-    if ((this.currentCatIndex == 2 && this.currentPageIndex == 7) || (this.currentCatIndex == 2 && this.currentPageIndex == 9)) {
-        return true;
-    }
-    return false;
+    return ((this.currentCatIndex === 2 && this.currentPageIndex === 7) || (this.currentCatIndex === 2 && this.currentPageIndex === 9));
+};
+
+/**
+ * Is the page Statistics -> Radio?
+ * @returns {boolean}
+ */
+CanopyEnhancer.prototype.isStatsRadio = function() {
+    return (this.currentCatIndex === 2 && this.currentPageIndex === 9);
 };
 
 /**
@@ -787,7 +829,7 @@ CanopyEnhancer.prototype.realTimeTraffic = function() {
     if (_this.isTrafficPage()) {
         var sectionTitle = this.Sections[this.currentCatIndex].pages[this.currentPageIndex];
 
-        if (this.currentPageIndex == 7) {
+        if (this.currentPageIndex === 7) {
             this.mainTrafficBlockID = document.getElementById('SectionEthernet');
             this.inTrafficID = 'FecCb_ifmib_ifInOctets';
             this.outTrafficID = 'FecCb_ifmib_ifOutOctets';
@@ -968,15 +1010,30 @@ CanopyEnhancer.prototype.realTimeTraffic = function() {
                     document.getElementById(this.outTrafficID).nextSibling
                 );
             }
+
+            // Medusa sounding stats
+
+
         } else {
             this.mainTrafficBlockID.insertAdjacentHTML(
                 'beforebegin',
                 '<div class="cge-error">Set Webpage Auto Update > 0 for real time throughput (Configuration => General)</div>'
             );
         }
+
+        // Medusa sounding stats
+        if (this.isMedusa === true && this.isStatsRadio()) {
+            this.renderSoundingStats();
+        }
     }
 };
 
+/**
+ * Value per second calculation
+ * @param current
+ * @param previous
+ * @returns {number}
+ */
 CanopyEnhancer.prototype.calcPerSeconds = function(current, previous) {
     return ((current - previous) / this.refreshTime);
 };
@@ -999,7 +1056,7 @@ CanopyEnhancer.prototype.updateTrafficData = function (currInOctets, currOutOcte
         /**
          * UPDATE GUI
          */
-        if (this.settings.cge_rtt_type == 'graph') {
+        if (this.settings.cge_rtt_type === 'graph') {
             var tmpTime = new Date();
             var timestring = tmpTime.getHours().leadingZero() + ':'+tmpTime.getMinutes().leadingZero()+':'+tmpTime.getSeconds().leadingZero();
 
@@ -1027,9 +1084,141 @@ CanopyEnhancer.prototype.updateTrafficData = function (currInOctets, currOutOcte
     }
 };
 
-/** ======================================================================
+/* ======================================================================
+ *  =SoundingStats
+ * ======================================================================*/
+
+/**
+ * Replace commas with pipe
+ *
+ * @param text
+ * @returns {*}
+ */
+CanopyEnhancer.prototype.replaceSoundingCommas = function(text) {
+    for (var i = 0; i < this.soundingStatsFields.length; i++) {
+        var regExpTmp = new RegExp(',\\s+'+RegExp.quote(this.soundingStatsFields[i]));
+        text = text.replace(regExpTmp, "|"+this.soundingStatsFields[i]);
+    }
+    return text;
+};
+
+/**
+ * Remove headers from rows
+ * @param text
+ * @returns {*}
+ */
+CanopyEnhancer.prototype.removeSoundingHeaders = function(text) {
+    for (var i = 0; i < this.soundingStatsFields.length; i++) {
+        text = text.replace(this.soundingStatsFields[i], "");
+    }
+    return text;
+};
+
+/**
+ * Table rendering
+ */
+CanopyEnhancer.prototype.renderSoundingStats = function() {
+
+    var _this = this;
+    var soundingStatsBlock = document.getElementById('SectionSoundingStatistics');
+    var soundingStatsLog = document.getElementById('SoundingStatsLog');
+    var soundingStatsTable = document.querySelector('#SectionSoundingStatistics table.section');
+
+    if (soundingStatsLog) {
+
+        // create an observer instance
+        this.medusaObserver = new MutationObserver(function (mutations) {
+            if (mutations && mutations.length > 0) {
+
+                var rawLog = soundingStatsLog.innerHTML;
+                var tbodyImprovedTable = document.getElementById('cge-sounding-tbody');
+                if (!tbodyImprovedTable) {
+                    // Create the table
+                    var soundingTable = '';
+                    soundingTable += '<table class="table section">';
+                    soundingTable += '<thead>';
+                    soundingTable += '<tr>';
+                    for (var i = 0; i < _this.soundingStatsFields.length; i++) {
+                        soundingTable += '<td>' + _this.soundingStatsFields[i].replace(':', '') + '</td>';
+                    }
+                    soundingTable += '</thead>';
+                    soundingTable += '</tr>';
+
+                    soundingTable += '<tbody id="cge-sounding-tbody">';
+                    soundingTable += '</tbody>';
+                    soundingTable += '</table>';
+
+                    // Insert the table before sounding sections begin
+                    soundingStatsTable.insertAdjacentHTML('beforebegin', soundingTable);
+
+                    // Get tbody element
+                    tbodyImprovedTable = document.getElementById('cge-sounding-tbody');
+                } else {
+                    tbodyImprovedTable.emptyElement();
+                }
+
+                var splittedLog = rawLog.split("<br>");
+                var soundingTbody = '';
+                for (i = 0; i < splittedLog.length; i++) {
+                    var row = _this.replaceSoundingCommas(splittedLog[i]);
+                    row = _this.removeSoundingHeaders(row);
+                    var splittedRow = row.split("|");
+                    if (splittedRow.length > 1) {
+                        soundingTable += '<tr>';
+                        for (var k = 0; k < splittedRow.length; k++) {
+                            var cellContent = splittedRow[k].trim();
+                            cellContent = escapeHTML(cellContent);
+
+                            switch (k) {
+                                case 1:
+                                    if (!cellContent.match(/^([0-9]{1,4})\s\(VALID\)$/)) {
+                                        cellContent = '<span class="cge-avglink-text">'+cellContent+'</span>';
+                                    }
+                                    break;
+                                case 2:
+                                    if (cellContent !== '3 (TRACKING)') {
+                                        cellContent = '<span class="cge-avglink-text">'+cellContent+'</span>';
+                                    }
+                                    break;
+                                case 3:
+                                    if (cellContent !== '0 (NONE)') {
+                                        cellContent = '<span class="cge-avglink-text">'+cellContent+'</span>';
+                                    }
+                                    break;
+                            }
+
+                            soundingTbody += '<td>'+cellContent+'</td>';
+                        }
+                        soundingTbody += '</tr>';
+                    }
+                }
+
+                tbodyImprovedTable.insertAdjacentHTML('afterbegin', soundingTbody);
+
+            }
+        });
+
+        // configuration of the observer:
+        var config = {
+            attributes: true,
+            childList: true,
+            characterData: true
+        };
+
+        // pass in the target node, as well as the observer options
+        this.medusaObserver.observe(soundingStatsLog, config);
+
+        soundingStatsBlock.style.position = 'relative';
+        soundingStatsBlock.style.overflow = 'hidden';
+
+        soundingStatsTable.style.position = 'absolute';
+        soundingStatsTable.style.left = '4000px';
+    }
+};
+
+/* ======================================================================
  *  =APEvaluation
- ** ======================================================================*/
+ * ======================================================================*/
 
 /**
  * Get evaluation Data
@@ -1082,13 +1271,13 @@ CanopyEnhancer.prototype.extractAPEvaluationData = function() {
                 var post_pattern = RegExp.quote(tmpAPEvalFields[kplus]);
 
                 // Fix for sw version < 14.1.1
-                if (post_pattern == 'Beacon Receive Power' && this.currentRadioModulation == 'MIMO_OFDM') {
+                if (post_pattern === 'Beacon Receive Power' && this.currentRadioModulation === 'MIMO_OFDM') {
                     post_pattern += '(?:\\sLevel)?'
                 }
 
-                if (pre_pattern == 'RegFail') {
+                if (pre_pattern === 'RegFail') {
                     tmpRegexp = new RegExp(pre_pattern + " ([0-9]+).*" + post_pattern+"\:");
-                } else if (pre_pattern == 'Beacon Receive Power' && this.currentRadioModulation == 'MIMO_OFDM') {
+                } else if (pre_pattern === 'Beacon Receive Power' && this.currentRadioModulation === 'MIMO_OFDM') {
                     // Fix for sw version < 14.1.1
                     tmpRegexp = new RegExp(pre_pattern + "(?:\\sLevel)?\:(.*)" + post_pattern);
                 } else {
@@ -1115,10 +1304,8 @@ CanopyEnhancer.prototype.extractAPEvaluationData = function() {
         }
         this.APEvaluationObj[index] = tmpObj;
     }
-    if (this.APEvaluationObj.length > 0) {
-        return true;
-    }
-    return false;
+
+    return (this.APEvaluationObj.length > 0);
 };
 
 /**
@@ -1186,6 +1373,7 @@ CanopyEnhancer.prototype.renderBetterEvaluationTemplate = function() {
                     break;
                 case 'ESN':
                 case 'Color Code':
+                case 'SectorUserCount':
                     evaluationContent += '<td class="cge-highlight-eval-entry">'+prop+': '+evalEntry[prop]+'</td>';
                     break;
                 default:
@@ -1232,9 +1420,9 @@ CanopyEnhancer.prototype.betterEvaluation = function() {
     }
 };
 
-/** ======================================================================
+/* ======================================================================
  *  =MACLookUp
- ** ======================================================================*/
+ * ======================================================================*/
 
 /**
  * MAC Lookup API
@@ -1320,9 +1508,9 @@ CanopyEnhancer.prototype.MacLookupPage = function() {
     }
 };
 
-/** ======================================================================
+/* ======================================================================
  *  =NAT Table
- ** ======================================================================*/
+ * ======================================================================*/
 
 /**
  * IP Lookup
@@ -1536,9 +1724,9 @@ CanopyEnhancer.prototype.APThroughputCalc = function() {
     }
 };
 
-/** ======================================================================
+/* ======================================================================
  *  =AP DATA VC
- ** ======================================================================*/
+ * ======================================================================*/
 
 /**
  * Is the throughput page
@@ -1726,13 +1914,13 @@ CanopyEnhancer.prototype.APDataVCCalc = function() {
     }
 };
 
-/** ======================================================================
+/* ======================================================================
  *  =EventLog
- ** ======================================================================*/
+ * ======================================================================*/
 
 CanopyEnhancer.prototype.EventLog = function() {
-    if ( (this.currentCatIndex == 0 && this.currentPageIndex == 5  && (this.currentRadioModulation == 'MIMO_OFDM' || this.currentRadioModulation == 'FSK')) ||
-        (this.currentCatIndex == 0 && this.currentPageIndex == 4  && this.currentRadioModulation == 'SISO_OFDM')) {
+    if ( (this.currentCatIndex === 0 && this.currentPageIndex === 5  && (this.currentRadioModulation === 'MIMO_OFDM' || this.currentRadioModulation === 'FSK')) ||
+        (this.currentCatIndex === 0 && this.currentPageIndex === 4  && this.currentRadioModulation === 'SISO_OFDM')) {
         var ContentBlock = document.getElementById('SysLoga');
         var ContentBlockHTML = ContentBlock.innerHTML;
 
@@ -1758,7 +1946,7 @@ CanopyEnhancer.prototype.EventLog = function() {
                 rows = splittedLog[i].split("<br>");
 
                 for (var k = 0; k < rows.length; k++) {
-                    if (rows[k] != "" && rows[k] != " ") {
+                    if (rows[k] !== "" && rows[k] !== " ") {
                         tr = document.createElement('tr');
                         td = document.createElement('td');
 
@@ -1774,12 +1962,11 @@ CanopyEnhancer.prototype.EventLog = function() {
                     }
                 }
 
+                table.appendChild(tbody);
+                div.appendChild(table);
+                logwrapper.appendChild(div);
+
                 if (i < splittedLog.length - 1) {
-
-                    table.appendChild(tbody);
-                    div.appendChild(table);
-                    logwrapper.appendChild(div);
-
                     div = document.createElement('div');
                     div.className = 'cge-event-log-divider';
                     table = document.createElement('table');
@@ -1831,16 +2018,16 @@ CanopyEnhancer.prototype.EventLog = function() {
 };
 
 
-/** ======================================================================
+/* ======================================================================
  *  =SessionStatus
- ** ======================================================================*/
+ * ======================================================================*/
 
 /**
  * Is the session status page?
  * @returns {boolean}
  */
 CanopyEnhancer.prototype.isSessionStatusPage = function() {
-    return (this.currentCatIndex == 0 && this.currentPageIndex == 2);
+    return (this.currentCatIndex === 0 && this.currentPageIndex === 2);
 };
 
 /**

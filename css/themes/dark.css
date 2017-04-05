@@ -101,6 +101,7 @@ div.section {
 #page input[type="password"] {
     color: #464748;
     background-color: #828b99;
+    border: 0;
 }
 
 #SectionSignalGraphes #PowerLevelOFDMCurrent,

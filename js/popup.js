@@ -50,6 +50,19 @@ window.onload = function() {
         }
     });
 
+    // Add version
+
+    var version = chrome.app.getDetails().version;
+    var versionReplaced = Number(version.replace(/\./g, ''));
+    var linkChangelog = document.createElement('a');
+    linkChangelog.href = 'https://github.com/mattiabasone/CanopyGUIEnhancer/blob/master/CHANGELOG.md#version-'+versionReplaced;
+    linkChangelog.target = '_blank';
+    linkChangelog.appendChild(document.createTextNode('Version '+version));
+
+    document.getElementById('cge-popup-version').appendChild(
+        linkChangelog
+    );
+
     var formSettings = document.forms.cge_form_settings;
 
     formSettings.addEventListener("submit", function(e) {

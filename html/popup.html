@@ -4,46 +4,48 @@
     <title>Canopy GUI Enhancer settings</title>
     <link rel="stylesheet" type="text/css" href="../css/bootstrap-mini.css" />
     <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/popup.css" />
     <script src="../js/popup.js"></script>
 </head>
 <body id="cge_popup_body">
 <div id="cge_popup_wrapper">
     <div id="cge_form_wrapper">
         <form id="cge_form_settings" name="cge_form_settings">
+
             <h3>Canopy GUI Enhancer settings</h3>
             <div class="form-group">
-                <label for="cge_enabled">Enable Canopy GUI Enhancer</label>
                 <input id="cge_enabled" type="checkbox" value="1" name="cge_enabled" />
+                <label for="cge_enabled">Enable Canopy GUI Enhancer</label>
             </div>
 
             <div class="form-group">
-                <label for="cge_custom_css">Enable custom CSS</label>
                 <input id="cge_custom_css" type="checkbox" value="1" name="cge_custom_css" />
+                <label for="cge_custom_css">Enable custom CSS</label>
             </div>
 
             <div class="form-group">
-                <label for="cge_ip_lookup">Enable IP Lookup</label>
                 <input id="cge_ip_lookup" type="checkbox" value="1" name="cge_ip_lookup" />
+                <label for="cge_ip_lookup">Enable IP Lookup</label>
             </div>
 
             <div class="form-group">
-                <label for="cge_mac_lookup">Enable MAC Lookup</label>
                 <input id="cge_mac_lookup" type="checkbox" value="1" name="cge_mac_lookup" />
+                <label for="cge_mac_lookup">Enable MAC Lookup</label>
             </div>
 
             <div class="form-group">
-                <label for="cge_ap_evaluation">Enable AP Eval parsing</label>
                 <input id="cge_ap_evaluation" type="checkbox" value="1" name="cge_ap_evaluation" />
+                <label for="cge_ap_evaluation">Enable AP Eval parsing</label>
             </div>
 
             <div class="form-group">
-                <label for="cge_ap_throughput">Enable AP Throughput Page parsing</label>
                 <input id="cge_ap_throughput" type="checkbox" value="1" name="cge_ap_throughput" />
+                <label for="cge_ap_throughput">Enable AP Throughput Page parsing</label>
             </div>
 
             <div class="form-group">
-                <label for="cge_ap_data_vc">Enable AP Data VC Page parsing</label>
                 <input id="cge_ap_data_vc" type="checkbox" value="1" name="cge_ap_data_vc" />
+                <label for="cge_ap_data_vc">Enable AP Data VC Page parsing</label>
             </div>
 
             <div class="form-group">
@@ -63,11 +65,9 @@
             </div>
 
             <div class="form-group">
-                <label for="cge_debug">Enable Console Debug</label>
                 <input id="cge_debug" type="checkbox" value="1" name="cge_debug" />
+                <label for="cge_debug">Enable Console Debug</label>
             </div>
-
-            <hr />
 
             <div class="form-group text-center">
                 <button class="btn btn-sm btn-default" type="submit" value="1" name="go">Save Changes</button>
@@ -79,6 +79,7 @@
         <a href="https://github.com/mattiabasone/CanopyGUIEnhancer/blob/master/CHANGELOG.md" target="_blank" class="btn btn-sm btn-default">Changelog</a><br /><br />
         <a href="https://goo.gl/5FBkVh" target="_blank" class="btn btn-sm btn-default"><strong>DONATE!</strong></a>
     </div>
+    <div id="cge-popup-version"></div>
 </div>
 </body>
 </html>

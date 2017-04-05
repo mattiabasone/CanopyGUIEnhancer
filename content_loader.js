@@ -67,7 +67,7 @@ chrome.storage.local.get(null, function (data) {
                 if (settingsObj.cge_custom_css === 1) {
                     loadExtensionCSS('css/bootstrap-mini.css');
                     loadExtensionCSS('css/gui.css');
-                    if (settingsObj.cge_theme != 'default') {
+                    if (settingsObj.cge_theme !== 'default' && settingsObj.cge_theme !== undefined ) {
                         loadExtensionCSS('css/themes/'+settingsObj.cge_theme+'.css');
                     }
                 }

@@ -1,0 +1,52 @@
+/** =popup **/
+
+body {
+    background-color: #2d5ea8;
+    padding: 0;
+    margin: 0;
+    font-size: 13px;
+}
+
+#cge_popup_wrapper {
+    padding: 15px;
+}
+
+#cge_form_settings {
+    width: 350px;
+}
+
+#cge_form_wrapper {
+    background-color: white;
+    border:1px solid white;
+    border-radius: 0;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+#cge_form_settings hr {
+    border: 0;
+    border-top: 1px solid #002a56;
+}
+
+#cge_form_settings .form-group {
+    padding: 5px;
+}
+
+#cge-popup-infobox {
+    padding:10px;
+}
+
+#cge-popup-version {
+    margin-top: 10px;
+    color: #bebebe;
+    text-align: center;
+}
+
+#cge-popup-version a {
+    color: #bababa;
+    text-decoration: none;
+}
+
+#cge-popup-version a:hover {
+    text-decoration: underline;
+}

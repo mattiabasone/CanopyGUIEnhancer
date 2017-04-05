@@ -145,7 +145,7 @@ String.prototype.regexLastIndexOf = function(regex, startpos) {
  * @returns {*}
  */
 function intval(number) {
-    number = parseInt(number);
+    number = Number(number);
     if (!isNaN(number)) {
         return number;
     }
@@ -175,15 +175,16 @@ function jsonp(url, callback) {
  * Escape HTML
  *
  * @param str
+ * @returns {string}
  */
 function escapeHTML(str) {
-    str.replace(
-        /[&"<>]/g,
-        function(m){escapeHTML.replacements[m]}
-    );
-    return str;
+    // Note: string cast using String; may throw if `str` is non-serializable, e.g. a Symbol.
+    // Most often this is not the case though.
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
-escapeHTML.replacements = { "&": "&amp;", '"': "&quot;", "<": "&lt;", ">": "&gt;" };
 
 /**
  * Load JS script Async

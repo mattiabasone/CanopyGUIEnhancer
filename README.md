@@ -34,9 +34,12 @@ The extension has been tested on the following software versions, with old versi
 * Added colors for signal, SNR and Adapt Rate in homepage
 * Added colors for Adapt Rate in the Session Status page
 * Added dark theme
+* Added Sounding Statistics table (PMP450m)
 * Improved Event Log formatting
 * Changed menu styles
 * Renamed background.js in content_loader.js
+* Changed icons
+* Added version in the settings popup
 * [Bugfix] Console error in content_loader.js
 * [Bugfix] AP Throughput page does not work with 14.2
 * [Bugfix] Ethernet link speed check does not work on 14.2
@@ -46,6 +49,8 @@ The extension has been tested on the following software versions, with old versi
 * [Bugfix] Extension does not work on 14.2/14.2.1 2.4GHz PMP450
 * [Bugfix] Removed some innerHTML
 * [Bugfix] Code cleaning
+* [Bugfix] PMP450m was detected as "SM"
+* [Bugfix] Event log does not show last entry
 
 ### Version 1.7
 

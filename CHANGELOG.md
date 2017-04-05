@@ -1,3 +1,20 @@
+## Version 1.8.8
+
+Changes:
+* Changed icons
+* Added version in the settings popup
+
+Bugfixes:
+* Event log does not show last entry
+
+## Version 1.8.7
+
+Changes:
+* Added Sounding Statistics table (PMP450m)
+
+Bugfixes:
+* PMP450m was detected as "SM"
+
 ## Version 1.8.6
 
 Changes:
