@@ -1,3 +1,8 @@
+## Version 1.8.9
+
+Bugfixes:
+* Enhanced Data VC does not work on 15.1 beta firmware
+
 ## Version 1.8.8
 
 Changes:

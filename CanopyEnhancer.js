@@ -355,7 +355,7 @@ CanopyEnhancer.prototype.initialize = function() {
         this.MacLookupPage();
         this.NATTable();
         this.APThroughput();
-        this.APDataVC();
+        this.dataVC();
         this.EventLog();
         this.sessionStatus();
         this.SetUpAJAX();
@@ -483,7 +483,7 @@ CanopyEnhancer.prototype.SetUpAJAX = function() {
 
                             _this.homePageRender();
                             _this.APThroughputCalc();
-                            _this.APDataVCCalc();
+                            _this.dataVCCalc();
                             _this.sessionStatus();
                         }
                     } else if (request.status === 401) {
@@ -1402,8 +1402,8 @@ CanopyEnhancer.prototype.renderBetterEvaluationTemplate = function() {
  * Initialize better evaluation
  */
 CanopyEnhancer.prototype.betterEvaluation = function() {
-    if (this.apEvaluationBlock != null && this.settings.cge_ap_evaluation) {
-        if (this.APEvaluationFields[this.currentRadioModulation] != 'undefined') {
+    if (this.apEvaluationBlock !== null && this.settings.cge_ap_evaluation) {
+        if (typeof this.APEvaluationFields[this.currentRadioModulation] !== 'undefined') {
             if (this.extractAPEvaluationData()) {
                 if (this.refreshTime > 0) {
                     var _this = this;
@@ -1502,7 +1502,9 @@ CanopyEnhancer.prototype.MACLookupTooltip = function() {
  * ARP Page processing
  */
 CanopyEnhancer.prototype.MacLookupPage = function() {
-    if ((this.currentCatIndex == 2 && (this.currentPageIndex == 20 || this.currentPageIndex == 5 || this.currentPageIndex == 21)) && (this.settings.cge_mac_lookup == 1)) {
+    if ((this.currentCatIndex === 2 &&
+        (this.currentPageIndex === 20 || this.currentPageIndex === 5 || this.currentPageIndex === 21)) &&
+        (this.settings.cge_mac_lookup === 1)) {
         this.MACLookupTooltip();
         this.addMACLookUpListener('#page');
     }
@@ -1529,6 +1531,7 @@ CanopyEnhancer.prototype.IPLookUp = function(block) {
         request.onload = function () {
             var attrContent;
             if (request.status >= 200 && request.status < 400) {
+
                 // Success!
                 var data = JSON.parse(request.responseText);
                 if (_this.debugMessages() === true) {
@@ -1589,12 +1592,14 @@ CanopyEnhancer.prototype.addIPLookUpListener = function(querySelector) {
  * NAT Table
  */
 CanopyEnhancer.prototype.NATTable = function() {
-    if (this.currentCatIndex == 5 && this.currentPageIndex == 9 && this.settings.cge_ip_lookup == 1) {
+    if (this.currentCatIndex === 5 && this.currentPageIndex === 9 && this.settings.cge_ip_lookup === 1) {
+
         // Tooltip
         this.tooltipIPNode = document.createElement('div');
         this.tooltipIPNode.id = 'cge-ip-lookup-tooltip';
         this.tooltipIPNode.className = 'cge-tooltip';
         document.getElementsByTagName("body")[0].appendChild(this.tooltipIPNode);
+
         // Listeners
         this.addIPLookUpListener('#page');
     }
@@ -1609,14 +1614,10 @@ CanopyEnhancer.prototype.NATTable = function() {
  * @returns {boolean}
  */
 CanopyEnhancer.prototype.isAPThroughputPage = function() {
-    if (this.currentCatIndex == 2 && this.currentPageIndex == 12) {
+    if (this.currentCatIndex === 2 && this.currentPageIndex === 12) {
         return true;
     }
-
-    if (document.getElementById('SectionLUIDStats') !== null) {
-        return true;
-    }
-    return false;
+    return (document.getElementById('SectionLUIDStats') !== null);
 };
 
 /**
@@ -1625,7 +1626,7 @@ CanopyEnhancer.prototype.isAPThroughputPage = function() {
  */
 CanopyEnhancer.prototype.APThroughput = function() {
     if (this.isAPThroughputPage() && this.settings.cge_ap_throughput == 1) {
-        if (this.refreshTime == 0) {
+        if (this.refreshTime === 0) {
             document.getElementById('SectionLUIDStats').insertAdjacentHTML(
                 'beforebegin',
                 '<div class="cge-error">Set Webpage Auto Update > 0 for real time stats (Configuration => General)</div>'
@@ -1648,13 +1649,29 @@ CanopyEnhancer.prototype.APThroughputCalc = function() {
         var totalInTraffic = 0;
         var totalOutTraffic = 0;
         if (rows.length > 0) {
+
             table.querySelector('thead tr:nth-child(1) th:nth-child(3)').setAttribute('colspan', 14);
             table.querySelector('thead tr:nth-child(2) th:nth-child(1)').setAttribute('colspan', 7);
             table.querySelector('thead tr:nth-child(2) th:nth-child(2)').setAttribute('colspan', 7);
-            table.querySelector('thead tr:nth-child(3) th:nth-child(1)').insertAdjacentHTML('afterend', '<th class="table-sortable:numeric table-sortable" title="Click to sort">traffic (Mbps)</th>');
-            table.querySelector('thead tr:nth-child(3) th:nth-child(4)').insertAdjacentHTML('afterend', '<th class="table-sortable:numeric table-sortable" title="Click to sort">data usage</th>');
-            table.querySelector('thead tr:nth-child(3) th:nth-child(8)').insertAdjacentHTML('afterend', '<th class="table-sortable:numeric table-sortable" title="Click to sort">traffic (Mbps)</th>');
-            table.querySelector('thead tr:nth-child(3) th:nth-child(11)').insertAdjacentHTML('afterend', '<th class="table-sortable:numeric table-sortable" title="Click to sort">data usage</th>');
+
+            // Add new columns
+            table.querySelector('thead tr:nth-child(3) th:nth-child(1)').insertAdjacentHTML(
+                'afterend',
+                '<th class="table-sortable:numeric table-sortable" title="Click to sort">traffic (Mbps)</th>'
+            );
+            table.querySelector('thead tr:nth-child(3) th:nth-child(4)').insertAdjacentHTML(
+                'afterend',
+                '<th class="table-sortable:numeric table-sortable" title="Click to sort">data usage</th>'
+            );
+            table.querySelector('thead tr:nth-child(3) th:nth-child(8)').insertAdjacentHTML(
+                'afterend',
+                '<th class="table-sortable:numeric table-sortable" title="Click to sort">traffic (Mbps)</th>'
+            );
+            table.querySelector('thead tr:nth-child(3) th:nth-child(11)').insertAdjacentHTML(
+                'afterend',
+                '<th class="table-sortable:numeric table-sortable" title="Click to sort">data usage</th>'
+            );
+
             for(var i = 0; i <  rows.length; i++) {
                 var LUID = parseInt(rows[i].querySelector('td:nth-child(2)').textContent);
                 if (LUID < 255) {
@@ -1725,24 +1742,24 @@ CanopyEnhancer.prototype.APThroughputCalc = function() {
 };
 
 /* ======================================================================
- *  =AP DATA VC
+ *  =DATA VC SECTION
  * ======================================================================*/
 
 /**
  * Is the throughput page
  * @returns {boolean}
  */
-CanopyEnhancer.prototype.isAPDataVCPage = function() {
-    return (this.currentCatIndex == 2 && this.currentPageIndex == 11);
+CanopyEnhancer.prototype.isDataVCPage = function() {
+    return (this.currentCatIndex === 2 && this.currentPageIndex === 11);
 };
 
 /**
  * AP Throughput check
  * @constructor
  */
-CanopyEnhancer.prototype.APDataVC = function() {
-    if (this.isAPDataVCPage() && this.settings.cge_ap_data_vc == 1) {
-        if (this.refreshTime == 0) {
+CanopyEnhancer.prototype.dataVC = function() {
+    if (this.isDataVCPage() && this.settings.cge_ap_data_vc === 1) {
+        if (this.refreshTime === 0) {
             document.getElementById('SectionDnlkStatsHW').insertAdjacentHTML(
                 'beforebegin',
                 '<div class="cge-error">Set Webpage Auto Update > 0 for real time stats (Configuration => General)</div>'
@@ -1755,39 +1772,107 @@ CanopyEnhancer.prototype.APDataVC = function() {
  * AP Throughput calculation
  * @constructor
  */
-CanopyEnhancer.prototype.APDataVCCalc = function() {
-    if (this.isAPDataVCPage() && this.settings.cge_ap_data_vc == 1) {
+CanopyEnhancer.prototype.dataVCCalc = function() {
+    if (this.isDataVCPage() && this.settings.cge_ap_data_vc === 1) {
         var table = document.getElementById('datavctable');
         var tbody = table.querySelector('tbody');
         var rows = tbody.querySelectorAll('tr');
         var totalInTraffic = 0;
         var totalOutTraffic = 0;
-        if (rows.length > 0) {
-            table.querySelector('thead tr:nth-child(1) th:nth-child(4)').setAttribute('colspan', 11);
-            table.querySelector('thead tr:nth-child(1) th:nth-child(5)').setAttribute('colspan', 7);
-            table.querySelector('thead tr:nth-child(2) th:nth-child(1)').insertAdjacentHTML('afterend', '<th class="table-sortable:numeric table-sortable" title="Click to sort">traffic (Mbps)</th>');
-            table.querySelector('thead tr:nth-child(2) th:nth-child(4)').insertAdjacentHTML('afterend', '<th class="table-sortable:numeric table-sortable" title="Click to sort">data usage</th>');
-            table.querySelector('thead tr:nth-child(2) th:nth-child(12)').insertAdjacentHTML('afterend', '<th class="table-sortable:numeric table-sortable" title="Click to sort">traffic (Mbps)</th>');
-            table.querySelector('thead tr:nth-child(2) th:nth-child(15)').insertAdjacentHTML('afterend', '<th class="table-sortable:numeric table-sortable" title="Click to sort">data usage</th>');
 
-            var tableChild = {
+        var isPre151 = (document.getElementById('datavctablefragmodulation') === null);
+
+        var tableConfig;
+        if (isPre151) {
+            tableConfig = {
+                header: {
+                    colspanIn: "11",
+                    colspanOut: "7",
+                    inMbpsAfter: "1",
+                    inDataUsageAfter: "4",
+                    outMbpsAfter: "12",
+                    outDataUsageAfter: "15"
+                },
                 low: {
-                    currInOctets: 4,
-                    currInUPackets: 5,
-                    currInNuPackets: 6,
-                    currOutOctets: 13,
-                    currOutUPackets: 14,
-                    currOutNuPackets: 15
+                    currInOctets: "4",
+                    currInUPackets: "5",
+                    currInNuPackets: "6",
+                    currOutOctets: "13",
+                    currOutUPackets: "14",
+                    currOutNuPackets: "15"
                 },
                 high: {
-                    currInOctets: 3,
-                    currInUPackets: 4,
-                    currInNuPackets: 5,
-                    currOutOctets: 8,
-                    currOutUPackets: 9,
-                    currOutNuPackets: 10
+                    currInOctets: "3",
+                    currInUPackets: "4",
+                    currInNuPackets: "5",
+                    currOutOctets: "8",
+                    currOutUPackets: "9",
+                    currOutNuPackets: "10"
                 }
             };
+        } else {
+            tableConfig = {
+                header: {
+                    colspanIn: "7",
+                    colspanOut: "7",
+                    inMbpsAfter: "1",
+                    inDataUsageAfter: "4",
+                    outMbpsAfter: "8",
+                    outDataUsageAfter: "11"
+                },
+                low: {
+                    currInOctets: "4",
+                    currInUPackets: "5",
+                    currInNuPackets: "6",
+                    currOutOctets: "9",
+                    currOutUPackets: "10",
+                    currOutNuPackets: "11"
+                },
+                high: {
+                    currInOctets: "3",
+                    currInUPackets: "4",
+                    currInNuPackets: "5",
+                    currOutOctets: "8",
+                    currOutUPackets: "9",
+                    currOutNuPackets: "10"
+                }
+            };
+        }
+        
+        if (rows.length > 0) {
+
+            table.querySelector('thead tr:nth-child(1) th:nth-child(4)').setAttribute(
+                'colspan',
+                tableConfig.header.colspanIn
+            );
+            table.querySelector('thead tr:nth-child(1) th:nth-child(5)').setAttribute(
+                'colspan',
+                tableConfig.header.colspanOut
+            );
+
+            // In Mbps
+            table.querySelector('thead tr:nth-child(2) th:nth-child('+tableConfig.header.inMbpsAfter+')').insertAdjacentHTML(
+                'afterend',
+                '<th class="table-sortable:numeric table-sortable" title="Click to sort">traffic (Mbps)</th>'
+            );
+
+            // In Data Usage
+            table.querySelector('thead tr:nth-child(2) th:nth-child('+tableConfig.header.inDataUsageAfter+')').insertAdjacentHTML(
+                'afterend',
+                '<th class="table-sortable:numeric table-sortable" title="Click to sort">data usage</th>'
+            );
+
+            // Out Mbps
+            table.querySelector('thead tr:nth-child(2) th:nth-child('+tableConfig.header.outMbpsAfter+')').insertAdjacentHTML(
+                'afterend',
+                '<th class="table-sortable:numeric table-sortable" title="Click to sort">traffic (Mbps)</th>'
+            );
+
+            // Out Data Usage
+            table.querySelector('thead tr:nth-child(2) th:nth-child('+tableConfig.header.outDataUsageAfter+')').insertAdjacentHTML(
+                'afterend',
+                '<th class="table-sortable:numeric table-sortable" title="Click to sort">data usage</th>'
+            );
 
             for(var i = 0; i <  rows.length; i++) {
                 var LUID, VCType;
@@ -1807,16 +1892,16 @@ CanopyEnhancer.prototype.APDataVCCalc = function() {
 
                 if (LUID <= 255) {
                     var InTraffic, OutTraffic, InUPPS, InNuPPS, OutUPPS, OutNuPPS;
-                    var currInOctets = intval(rows[i].querySelector('td:nth-child('+tableChild[VCType].currInOctets+')').textContent);
-                    var currOutOctets = intval(rows[i].querySelector('td:nth-child('+tableChild[VCType].currOutOctets+')').textContent);
+                    var currInOctets = intval(rows[i].querySelector('td:nth-child('+tableConfig[VCType].currInOctets+')').textContent);
+                    var currOutOctets = intval(rows[i].querySelector('td:nth-child('+tableConfig[VCType].currOutOctets+')').textContent);
 
-                    var currInUPackets = intval(rows[i].querySelector('td:nth-child('+tableChild[VCType].currInUPackets+')').textContent);
-                    var currInNuPackets = intval(rows[i].querySelector('td:nth-child('+tableChild[VCType].currInNuPackets+')').textContent);
-                    var currOutUPackets = intval(rows[i].querySelector('td:nth-child('+tableChild[VCType].currOutUPackets+')').textContent);
-                    var currOutNuPackets = intval(rows[i].querySelector('td:nth-child('+tableChild[VCType].currOutNuPackets+')').textContent);
+                    var currInUPackets = intval(rows[i].querySelector('td:nth-child('+tableConfig[VCType].currInUPackets+')').textContent);
+                    var currInNuPackets = intval(rows[i].querySelector('td:nth-child('+tableConfig[VCType].currInNuPackets+')').textContent);
+                    var currOutUPackets = intval(rows[i].querySelector('td:nth-child('+tableConfig[VCType].currOutUPackets+')').textContent);
+                    var currOutNuPackets = intval(rows[i].querySelector('td:nth-child('+tableConfig[VCType].currOutNuPackets+')').textContent);
 
                     if (this.APThroughputSM[LUID] !== undefined) {
-                        /**
+                        /*
                          * IN
                          */
                         // traffic
@@ -1832,7 +1917,7 @@ CanopyEnhancer.prototype.APDataVCCalc = function() {
                         InNuPPS = Math.round(InNuPPS);
                         this.APThroughputSM[LUID].prevInNuPackets = currInNuPackets;
 
-                        /**
+                        /*
                          * OUT
                          */
                         // traffic
@@ -1872,42 +1957,45 @@ CanopyEnhancer.prototype.APDataVCCalc = function() {
                     OutTraffic = OutTraffic.byte2Mbit().toFixed(2);
 
                     // Outbound
-                    rows[i].querySelector('td:nth-child('+tableChild[VCType].currOutNuPackets+')').insertAdjacentHTML(
+                    rows[i].querySelector('td:nth-child('+tableConfig[VCType].currOutNuPackets+')').insertAdjacentHTML(
                         'afterend',
                         '<td class="cge-highlight">'+this.APThroughputSM[LUID].prevOutOctets.formatDataUsage()+'</td>'
                     );
-                    rows[i].querySelector('td:nth-child('+tableChild[VCType].currOutNuPackets+')').insertAdjacentHTML(
+                    rows[i].querySelector('td:nth-child('+tableConfig[VCType].currOutNuPackets+')').insertAdjacentHTML(
                         'beforeend',
                         '<br /><b class="cge-color-blue-cambium">' + OutNuPPS + ' pps</b>'
                     );
-                    rows[i].querySelector('td:nth-child('+tableChild[VCType].currOutUPackets+')').insertAdjacentHTML(
+                    rows[i].querySelector('td:nth-child('+tableConfig[VCType].currOutUPackets+')').insertAdjacentHTML(
                         'beforeend',
                         '<br /><b class="cge-color-blue-cambium">' + OutUPPS + ' pps</b>'
                     );
-                    rows[i].querySelector('td:nth-child('+tableChild[VCType].currOutOctets+')').insertAdjacentHTML('afterend', '<td class="cge-highlight">'+OutTraffic+'</td>');
+                    rows[i].querySelector('td:nth-child('+tableConfig[VCType].currOutOctets+')').insertAdjacentHTML(
+                        'afterend',
+                        '<td class="cge-highlight">'+OutTraffic+'</td>'
+                    );
 
                     // Inbound
-                    rows[i].querySelector('td:nth-child('+tableChild[VCType].currInNuPackets+')').insertAdjacentHTML(
+                    rows[i].querySelector('td:nth-child('+tableConfig[VCType].currInNuPackets+')').insertAdjacentHTML(
                         'afterend',
                         '<td class="cge-highlight">'+this.APThroughputSM[LUID].prevInOctets.formatDataUsage()+'</td>'
                     );
-                    rows[i].querySelector('td:nth-child('+tableChild[VCType].currInNuPackets+')').insertAdjacentHTML(
+                    rows[i].querySelector('td:nth-child('+tableConfig[VCType].currInNuPackets+')').insertAdjacentHTML(
                         'beforeend',
                         '<br /><b class="cge-color-blue-cambium">' + InNuPPS + ' pps</b>'
                     );
-                    rows[i].querySelector('td:nth-child('+tableChild[VCType].currInUPackets+')').insertAdjacentHTML(
+                    rows[i].querySelector('td:nth-child('+tableConfig[VCType].currInUPackets+')').insertAdjacentHTML(
                         'beforeend',
                         '<br /><b class="cge-color-blue-cambium">' + InUPPS + ' pps</b>'
                     );
-                    rows[i].querySelector('td:nth-child('+tableChild[VCType].currInOctets+')').insertAdjacentHTML(
+                    rows[i].querySelector('td:nth-child('+tableConfig[VCType].currInOctets+')').insertAdjacentHTML(
                         'afterend', '<td class="cge-highlight">'+InTraffic+'</td>'
                     );
 
                 } else {
-                    rows[i].querySelector('td:nth-child('+tableChild[VCType].currOutNuPackets+')').insertAdjacentHTML('afterend', '<td></td>');
-                    rows[i].querySelector('td:nth-child('+tableChild[VCType].currOutOctets+')').insertAdjacentHTML('afterend', '<td></td>');
-                    rows[i].querySelector('td:nth-child('+tableChild[VCType].currInNuPackets+')').insertAdjacentHTML('afterend', '<td></td>');
-                    rows[i].querySelector('td:nth-child('+tableChild[VCType].currInOctets+')').insertAdjacentHTML('afterend', '<td></td>');
+                    rows[i].querySelector('td:nth-child('+tableConfig[VCType].currOutNuPackets+')').insertAdjacentHTML('afterend', '<td></td>');
+                    rows[i].querySelector('td:nth-child('+tableConfig[VCType].currOutOctets+')').insertAdjacentHTML('afterend', '<td></td>');
+                    rows[i].querySelector('td:nth-child('+tableConfig[VCType].currInNuPackets+')').insertAdjacentHTML('afterend', '<td></td>');
+                    rows[i].querySelector('td:nth-child('+tableConfig[VCType].currInOctets+')').insertAdjacentHTML('afterend', '<td></td>');
                 }
             }
         }
@@ -1991,7 +2079,7 @@ CanopyEnhancer.prototype.EventLog = function() {
                 rows = ContentBlockHTML.split("<br>");
 
                 for (var k = 0; k < rows.length; k++) {
-                    if (rows[k] != "" && rows[k] != " ") {
+                    if (rows[k] !== "" && rows[k] !== " ") {
                         tr = document.createElement('tr');
                         td = document.createElement('td');
 
@@ -2063,8 +2151,6 @@ CanopyEnhancer.prototype.sessionStatus = function() {
         }
     }
 };
-
-
 
 var CGE;
 CGE = new CanopyEnhancer();
