@@ -1,3 +1,8 @@
+## Version 1.8.10
+
+Changes:
+* Added highlight for Ethernet/Radio interface errors
+
 ## Version 1.8.9
 
 Bugfixes:

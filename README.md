@@ -33,6 +33,7 @@ The extension has been tested on the following software versions, with old versi
 * Added EscapeHTML on SetupAjax (does not pass review on Firefox Add-On platform)
 * Added colors for signal, SNR and Adapt Rate in homepage
 * Added colors for Adapt Rate in the Session Status page
+* Added highlight for Ethernet/Radio interface errors
 * Added dark theme
 * Added Sounding Statistics table (PMP450m)
 * Improved Event Log formatting

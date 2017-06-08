@@ -7,6 +7,10 @@ body {
     font-family: Arial, sans-serif;
 }
 
+.bold {
+    font-weight: bold;
+}
+
 .cge-color-blue-cambium {
     color: #003D79 !important;
 }
@@ -25,6 +29,10 @@ body {
     border: 1px solid #B71C1C;
     color: #B71C1C;
     margin: 1em;
+}
+
+.cge-error-text {
+    color: #B71C1C;
 }
 
 .text-center {

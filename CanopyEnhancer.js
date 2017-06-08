@@ -46,6 +46,42 @@ var CanopyEnhancer = function() {
         outTraffic: 0
     };
 
+    /**
+     * Ethernet interface error IDs
+     *
+     * @type {[String]}
+     */
+    this.ethernetErrorsFields = [
+        'FecCb_ifmib_ifInErrors',
+        'FecCb_ifmib_ifOutErrors',
+        'FecCb_fec_crerrs',
+        'FecCb_fec_rcvfifonobufs',
+        'FecCb_fec_clserrs',
+        'FecCb_fec_rlerrs',
+        'FecCb_fec_unerrs',
+        'FecCb_fec_cslerrs',
+        'FecCb_fec_nocs',
+        'FecCb_fec_lgerrs',
+        'FecCb_fec_sherrs',
+        'FecCb_fec_excdef'
+    ];
+
+    /**
+     * Radio interface errors IDs
+     *
+     * @type {[String]}
+     */
+    this.radioErrorsFields = [
+        'RfCb_ifmib_ifInDiscards',
+        'RfCb_ifmib_ifInErrors',
+        'RfCb_ifmib_ifInUnknownProtos',
+        'RfCb_ifmib_ifOutDiscards',
+        'RfCb_ifmib_ifOutErrors',
+        'SoundingStats_ResponsesSuppressed',
+        'SoundingStats_ErrorCount',
+        'SoundingStats_VersionMismatch'
+    ];
+
     /*
      * =AP_Evaluation
      */
@@ -806,19 +842,27 @@ CanopyEnhancer.prototype.homePageRender = function () {
  * ======================================================================*/
 
 /**
- * Is radio traffic page? statistics -> ethernet/radio
+ * Is the page Statistics -> Radio?
  * @returns {boolean}
  */
-CanopyEnhancer.prototype.isTrafficPage = function() {
-    return ((this.currentCatIndex === 2 && this.currentPageIndex === 7) || (this.currentCatIndex === 2 && this.currentPageIndex === 9));
+CanopyEnhancer.prototype.isEthernetStats = function() {
+    return (this.currentCatIndex === 2 && this.currentPageIndex === 7);
 };
 
 /**
  * Is the page Statistics -> Radio?
  * @returns {boolean}
  */
-CanopyEnhancer.prototype.isStatsRadio = function() {
+CanopyEnhancer.prototype.isRadioStats = function() {
     return (this.currentCatIndex === 2 && this.currentPageIndex === 9);
+};
+
+/**
+ * Is radio traffic page? statistics -> ethernet/radio
+ * @returns {boolean}
+ */
+CanopyEnhancer.prototype.isTrafficPage = function() {
+    return ( this.isEthernetStats() || this.isRadioStats() );
 };
 
 /**
@@ -1022,9 +1066,12 @@ CanopyEnhancer.prototype.realTimeTraffic = function() {
         }
 
         // Medusa sounding stats
-        if (this.isMedusa === true && this.isStatsRadio()) {
+        if (this.isMedusa === true && this.isRadioStats()) {
             this.renderSoundingStats();
         }
+
+        // Error highlight
+        this.highlightInterfaceErrors();
     }
 };
 
@@ -1053,7 +1100,7 @@ CanopyEnhancer.prototype.updateTrafficData = function (currInOctets, currOutOcte
         this.trafficData.prevInOctets = currInOctets;
         this.trafficData.prevOutOctets = currOutOctets;
 
-        /**
+        /*
          * UPDATE GUI
          */
         if (this.settings.cge_rtt_type === 'graph') {
@@ -1082,6 +1129,46 @@ CanopyEnhancer.prototype.updateTrafficData = function (currInOctets, currOutOcte
 
         this.trafficData.started = true;
     }
+
+    this.highlightInterfaceErrors();
+};
+
+/**
+ * Interface error highlight
+ */
+CanopyEnhancer.prototype.highlightInterfaceErrors = function () {
+
+    var errorClassName = "cge-error-text";
+    var errorFields = [];
+
+    if (this.isEthernetStats()) {
+        errorFields = this.ethernetErrorsFields;
+    } else if (this.isRadioStats()) {
+        errorFields = this.radioErrorsFields;
+    }
+
+    if (errorFields.length > 0) {
+
+        for (var i = 0; i < errorFields.length; i++) {
+
+            var el = document.getElementById(errorFields[i]);
+            if (!el) {
+                continue;
+            }
+
+            var value = Number(el.textContent);
+            if (value > 0) {
+                // Add highlight to the counter
+                el.parentNode.parentNode.parentNode.classList.add(errorClassName);
+                el.parentNode.parentNode.parentNode.classList.add("bold");
+            } else {
+                // Remove error highlight if it was previously added
+                el.parentNode.parentNode.parentNode.classList.remove(errorClassName);
+                el.parentNode.parentNode.parentNode.classList.remove("bold");
+            }
+        }
+    }
+
 };
 
 /* ======================================================================
@@ -1293,7 +1380,7 @@ CanopyEnhancer.prototype.extractAPEvaluationData = function() {
                 if (tmpMatch) {
                     tmpObj[pre_pattern] = tmpMatch[1].trimBlank()+' ms';
                 }
-                if ( (i+1 == splittedEval.length) && (this.currentSessionStatus == 'SCANNING')) {
+                if ( (i+1 === splittedEval.length) && (this.currentSessionStatus === 'SCANNING')) {
                     tmpRegexp = new RegExp(pre_pattern+"\:(?:.*)?Currently Scanning:\\s(.*)");
                     tmpMatch = tmpStr.match(tmpRegexp);
                     if (tmpMatch) {
@@ -1314,7 +1401,7 @@ CanopyEnhancer.prototype.extractAPEvaluationData = function() {
 CanopyEnhancer.prototype.renderBetterEvaluationTemplate = function() {
 
     var betterEvalBlock = document.getElementById('betterEvaluation');
-    if (typeof(betterEvalBlock) == 'undefined' || betterEvalBlock == null) {
+    if (typeof(betterEvalBlock) === 'undefined' || betterEvalBlock == null) {
         betterEvalBlock = document.createElement("div");
         betterEvalBlock.id = 'betterEvaluation';
         betterEvalBlock.emptyElement();
@@ -1325,14 +1412,14 @@ CanopyEnhancer.prototype.renderBetterEvaluationTemplate = function() {
     evaluationContent += "<div class='betterEvaluationHead'> <b>AP Selection Method:</b> "+this.apSelectionMethod+' - ';
     evaluationContent += ' <b>Current evaluation entry:</b> <a href="#cge-ap-eval-entry-'+this.currentEvaluatinEntry+'">'+this.currentEvaluatinEntry+'</a> - ';
     evaluationContent += " <b>Session status:</b> "+this.currentSessionStatus;
-    if (this.currentSessionStatus == 'SCANNING') {
+    if (this.currentSessionStatus === 'SCANNING') {
         evaluationContent += " - <b>Currently Scanning:</b> "+this.currentlyScanning;
     }
     evaluationContent += "</div><hr /><br />";
 
     for(var i = 0;i<this.APEvaluationObj.length;i++) {
         var evalEntry = this.APEvaluationObj[i];
-        var currIndex = parseInt(evalEntry['Index']);
+        var currIndex = Number(evalEntry['Index']);
         delete evalEntry['Index'];
 
         var insRow = true;
@@ -1605,9 +1692,9 @@ CanopyEnhancer.prototype.NATTable = function() {
     }
 };
 
-/** ======================================================================
+/* ======================================================================
  *  =AP Throughput page
- ** ======================================================================*/
+ * ======================================================================*/
 
 /**
  * Is the throughput page
@@ -1625,7 +1712,7 @@ CanopyEnhancer.prototype.isAPThroughputPage = function() {
  * @constructor
  */
 CanopyEnhancer.prototype.APThroughput = function() {
-    if (this.isAPThroughputPage() && this.settings.cge_ap_throughput == 1) {
+    if (this.isAPThroughputPage() && this.settings.cge_ap_throughput === 1) {
         if (this.refreshTime === 0) {
             document.getElementById('SectionLUIDStats').insertAdjacentHTML(
                 'beforebegin',
@@ -1683,7 +1770,7 @@ CanopyEnhancer.prototype.APThroughputCalc = function() {
                     var currOutPackets = intval(rows[i].querySelector('td:nth-child(9)').textContent);
 
                     if (this.APThroughputSM[LUID] !== undefined) {
-                        /**
+                        /*
                          * IN
                          */
                         // traffic
@@ -1694,7 +1781,7 @@ CanopyEnhancer.prototype.APThroughputCalc = function() {
                         InPPS = Math.round(InPPS);
                         this.APThroughputSM[LUID].prevInPackets = currInPackets;
 
-                        /**
+                        /*
                          * OUT
                          */
                         // traffic
@@ -1838,7 +1925,7 @@ CanopyEnhancer.prototype.dataVCCalc = function() {
                 }
             };
         }
-        
+
         if (rows.length > 0) {
 
             table.querySelector('thead tr:nth-child(1) th:nth-child(4)').setAttribute(
