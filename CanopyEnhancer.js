@@ -1,3 +1,7 @@
+const PLATFORM_MIMO_OFDM = 'MIMO_OFDM';
+const PLATFORM_SISO_OFDM = 'SISO_OFDM';
+const PLATFORM_FSK = 'FSK';
+
 /**
  * Canopy GUI Enhancer
  * @constructor
@@ -27,7 +31,7 @@ var CanopyEnhancer = function() {
     this.currentCatIndex = -1;
     this.currentPageIndex = -1;
     this.currentRadioMAC = "000000000000";
-    this.currentRadioModulation = "MIMO_OFDM";
+    this.currentRadioModulation = PLATFORM_MIMO_OFDM;
     this.isMedusa = false;
     this.medusaObserver = null;
 
@@ -331,12 +335,12 @@ CanopyEnhancer.prototype.initialize = function() {
 
             if (resDevType !== null) {
                 deviceType = resDevType[1];
-                this.currentRadioModulation = 'FSK';
+                this.currentRadioModulation = PLATFORM_FSK;
             } else {
                 resDevType = titleString.match(/.*(?:GHz|MHz)\sSISO\sOFDM\s\-\s([a-zA-Z\-\s]+)\s\-\s([A-Fa-f0-9\-]{17})/);
                 if (resDevType !== null) {
                     deviceType = resDevType[1];
-                    this.currentRadioModulation = 'SISO_OFDM';
+                    this.currentRadioModulation = PLATFORM_SISO_OFDM;
                 } else {
                     resDevType = titleString.match(/.*(?:GHz|MHz)\s(MU\-)?MIMO(?:\sOFDM)?\s\-\s([a-zA-Z\-\s]+)(?:\s\-\s|\n)([A-Fa-f0-9\-]{17})/);
                     if (resDevType) {
@@ -446,7 +450,7 @@ CanopyEnhancer.prototype.SetUpAJAX = function() {
 
         function SetUpAJAX() {
             var request = document.request;
-            if (request.readyState > 0 && request.readyState < 4) {
+            if (typeof request === 'undefined' || (request.readyState > 0 && request.readyState < 4)) {
                 return;
             }
             var vars = [];
@@ -1870,60 +1874,93 @@ CanopyEnhancer.prototype.dataVCCalc = function() {
         var isPre151 = (document.getElementById('datavctablefragmodulation') === null);
 
         var tableConfig;
-        if (isPre151) {
-            tableConfig = {
-                header: {
-                    colspanIn: "11",
-                    colspanOut: "7",
-                    inMbpsAfter: "1",
-                    inDataUsageAfter: "4",
-                    outMbpsAfter: "12",
-                    outDataUsageAfter: "15"
-                },
-                low: {
-                    currInOctets: "4",
-                    currInUPackets: "5",
-                    currInNuPackets: "6",
-                    currOutOctets: "13",
-                    currOutUPackets: "14",
-                    currOutNuPackets: "15"
-                },
-                high: {
-                    currInOctets: "3",
-                    currInUPackets: "4",
-                    currInNuPackets: "5",
-                    currOutOctets: "8",
-                    currOutUPackets: "9",
-                    currOutNuPackets: "10"
+
+        switch (this.currentRadioModulation) {
+            case PLATFORM_FSK:
+                tableConfig = {
+                    header: {
+                        colspanIn: "7",
+                        colspanOut: "7",
+                        inMbpsAfter: "1",
+                        inDataUsageAfter: "4",
+                        outMbpsAfter: "8",
+                        outDataUsageAfter: "11"
+                    },
+                    low: {
+                        currInOctets: "4",
+                        currInUPackets: "5",
+                        currInNuPackets: "6",
+                        currOutOctets: "9",
+                        currOutUPackets: "10",
+                        currOutNuPackets: "11"
+                    },
+                    high: {
+                        currInOctets: "3",
+                        currInUPackets: "4",
+                        currInNuPackets: "5",
+                        currOutOctets: "8",
+                        currOutUPackets: "9",
+                        currOutNuPackets: "10"
+                    }
+                };
+                break;
+            default:
+                if (isPre151) {
+                    tableConfig = {
+                        header: {
+                            colspanIn: "11",
+                            colspanOut: "7",
+                            inMbpsAfter: "1",
+                            inDataUsageAfter: "4",
+                            outMbpsAfter: "12",
+                            outDataUsageAfter: "15"
+                        },
+                        low: {
+                            currInOctets: "4",
+                            currInUPackets: "5",
+                            currInNuPackets: "6",
+                            currOutOctets: "13",
+                            currOutUPackets: "14",
+                            currOutNuPackets: "15"
+                        },
+                        high: {
+                            currInOctets: "3",
+                            currInUPackets: "4",
+                            currInNuPackets: "5",
+                            currOutOctets: "8",
+                            currOutUPackets: "9",
+                            currOutNuPackets: "10"
+                        }
+                    };
+                } else {
+                    tableConfig = {
+                        header: {
+                            colspanIn: "7",
+                            colspanOut: "7",
+                            inMbpsAfter: "1",
+                            inDataUsageAfter: "4",
+                            outMbpsAfter: "8",
+                            outDataUsageAfter: "11"
+                        },
+                        low: {
+                            currInOctets: "4",
+                            currInUPackets: "5",
+                            currInNuPackets: "6",
+                            currOutOctets: "9",
+                            currOutUPackets: "10",
+                            currOutNuPackets: "11"
+                        },
+                        high: {
+                            currInOctets: "3",
+                            currInUPackets: "4",
+                            currInNuPackets: "5",
+                            currOutOctets: "8",
+                            currOutUPackets: "9",
+                            currOutNuPackets: "10"
+                        }
+                    };
                 }
-            };
-        } else {
-            tableConfig = {
-                header: {
-                    colspanIn: "7",
-                    colspanOut: "7",
-                    inMbpsAfter: "1",
-                    inDataUsageAfter: "4",
-                    outMbpsAfter: "8",
-                    outDataUsageAfter: "11"
-                },
-                low: {
-                    currInOctets: "4",
-                    currInUPackets: "5",
-                    currInNuPackets: "6",
-                    currOutOctets: "9",
-                    currOutUPackets: "10",
-                    currOutNuPackets: "11"
-                },
-                high: {
-                    currInOctets: "3",
-                    currInUPackets: "4",
-                    currInNuPackets: "5",
-                    currOutOctets: "8",
-                    currOutUPackets: "9",
-                    currOutNuPackets: "10"
-                }
-            };
+                break;
         }
 
         if (rows.length > 0) {
@@ -2239,10 +2276,9 @@ CanopyEnhancer.prototype.sessionStatus = function() {
     }
 };
 
-var CGE;
-CGE = new CanopyEnhancer();
-if(document.readyState === "complete") {
-    CGE.initialize();
-} else {
-    document.addEventListener('DOMContentLoaded', CGE.initialize);
+if (typeof DataVCStatOnload === 'undefined') {
+    function DataVCStatOnload(){}
 }
+
+var CGE = new CanopyEnhancer();
+CGE.initialize();

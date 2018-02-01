@@ -52,6 +52,7 @@ The extension has been tested on the following software versions, with old versi
 * [Bugfix] Code cleaning
 * [Bugfix] PMP450m was detected as "SM"
 * [Bugfix] Event log does not show last entry
+* [Bugfix] 13.4.1 PMP100 Data VC page rendering
 
 ### Version 1.7
 

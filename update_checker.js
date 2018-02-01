@@ -5,7 +5,7 @@ chrome.runtime.onInstalled.addListener(function (object) {
                 null,
                 {
                     type: 'basic',
-                    iconUrl: 'icon_128.png',
+                    iconUrl: 'icons/icon_128px.png',
                     title: 'Extension updated!',
                     message: 'Canopy GUI Enhancer has been updated!'
                 }

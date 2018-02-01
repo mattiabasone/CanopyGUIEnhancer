@@ -1,3 +1,8 @@
+## Version 1.8.11
+
+Changes:
+* Fixed 13.4.1 PMP100 Data VC page rendering
+
 ## Version 1.8.10
 
 Changes:
