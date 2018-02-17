@@ -1,6 +1,11 @@
 ## Version 1.8.11
 
 Changes:
+* macvendors.co is broken, I've created a new service for mac address lookup (maclookup.info) and changed jsonp function endpoint
+
+## Version 1.8.11
+
+Changes:
 * Fixed 13.4.1 PMP100 Data VC page rendering
 
 ## Version 1.8.10

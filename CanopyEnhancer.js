@@ -1527,16 +1527,17 @@ CanopyEnhancer.prototype.MACLookUp = function(block) {
     block.classList.add('cge-highlight');
 
     if (macaddress.isMAC()) {
-        jsonp('https://macvendors.co/api/jsonp/'+macaddress, function(data) {
-            if (data.result !== undefined) {
+        jsonp('https://maclookup.info/api/jsonp/'+macaddress, function(response) {
+            if (response.ok !== undefined) {
                 var attrContent;
                 if (_this.debugMessages() === true) {
-                    console.log(data);
+                    console.log(response);
                 }
-                if (data.result.error === undefined) {
-                    attrContent = "Company: " + data.result.company + "\n\n";
-                    attrContent += "MAC Prefix: " + data.result.mac_prefix + "\n\n";
-                    attrContent += "Address: " + data.result.address;
+                if (response.ok === true) {
+                    attrContent = "Company: " + response.data.company + "\n\n";
+                    attrContent += "MAC Prefix: " + response.data.prefix + "\n\n";
+                    attrContent += "Address: " + response.data.address+ "\n\n";
+                    attrContent += "Country Code: " + response.data.country_code
 
                 } else {
                     attrContent = "Error, no result";
