@@ -48,7 +48,7 @@ Number.prototype.formatDataUsage = function() {
 /**
  * Round 2 dec
  *
- * @returns {number}
+ * @returns Number
  */
 Number.prototype.round2 = function() {
     return Math.round(this * 100) / 100;

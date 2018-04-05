@@ -36,11 +36,12 @@ The extension has been tested on the following software versions, with old versi
 * Added highlight for Ethernet/Radio interface errors
 * Added dark theme
 * Added Sounding Statistics table (PMP450m)
+* Added version in the settings popup
+* Added pps calculation in Ethernet and Radio tabs
 * Improved Event Log formatting
 * Changed menu styles
 * Renamed background.js in content_loader.js
 * Changed icons
-* Added version in the settings popup
 * [Bugfix] Console error in content_loader.js
 * [Bugfix] AP Throughput page does not work with 14.2
 * [Bugfix] Ethernet link speed check does not work on 14.2

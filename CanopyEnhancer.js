@@ -41,13 +41,31 @@ var CanopyEnhancer = function() {
     this.mainTrafficBlockID = null;
     this.inTrafficID = null;
     this.outTrafficID = null;
+    this.inUcastPktsID = null;
+    this.outUcastPktsID = null;
+    this.inNUcastPktsID = null;
+    this.outNUcastPktsID = null;
     this.realTimeTrafficChart = null;
     this.trafficData = {
         started: false,
+        // InOctets
         prevInOctets: 0,
         inTraffic: 0,
+        // OutOctets
         prevOutOctets: 0,
-        outTraffic: 0
+        outTraffic: 0,
+        // InUcastPkts
+        prevInUcastPkts: 0,
+        inUcastPps: 0,
+        // OutUcastPkts
+        prevOutUcastPkts: 0,
+        outUcastPps: 0,
+        // InNUcastPkts
+        prevInNUcastPkts: 0,
+        inNUcastPps: 0,
+        // OutNUcastPkts
+        prevOutNUcastPkts: 0,
+        outNUcastPps: 0,
     };
 
     /**
@@ -448,7 +466,7 @@ CanopyEnhancer.prototype.SetUpAJAX = function() {
     if (this.refreshTime > 0) {
         var _this = this;
 
-        function SetUpAJAX() {
+        window.SetUpAJAX = function () {
             var request = document.request;
             if (typeof request === 'undefined' || (request.readyState > 0 && request.readyState < 4)) {
                 return;
@@ -474,23 +492,16 @@ CanopyEnhancer.prototype.SetUpAJAX = function() {
                     if (request.status === 200) {
                         if (request.responseXML) {
 
-                            if (_this.isTrafficPage()) {
-                                _this.updateTrafficData(
-                                    request.responseXML.getElementById(_this.inTrafficID).firstChild.nodeValue,
-                                    request.responseXML.getElementById(_this.outTrafficID).firstChild.nodeValue
-                                );
-                            }
-
-                            var vars = request.responseXML.getElementsByTagName('var');
-                            for (var i = 0; i < vars.length; i++) {
-                                var id = vars[i].getAttribute('id');
+                            let vars = request.responseXML.getElementsByTagName('var');
+                            for (let i = 0; i < vars.length; i++) {
+                                let id = vars[i].getAttribute('id');
                                 if (id !== RebootClass) {
-                                    var htmlCode = '';
+                                    let htmlCode = '';
                                     if (vars[i].hasChildNodes())
                                         htmlCode = vars[i].firstChild.nodeValue;
                                     id = PerformRefreshOverride(id, htmlCode);
                                     if (id) {
-                                        var parent = document.getElementById(id);
+                                        let parent = document.getElementById(id);
                                         if (parent) {
                                             parent.emptyElement();
                                             parent.insertAdjacentHTML('afterbegin', htmlCode);
@@ -505,8 +516,8 @@ CanopyEnhancer.prototype.SetUpAJAX = function() {
                                         }
                                     }
                                 } else {
-                                    var rebootBoxes = getElementsByClassName(document, 'span', RebootClass);
-                                    for (var j = 0; j < rebootBoxes.length; j++) {
+                                    let rebootBoxes = getElementsByClassName(document, 'span', RebootClass);
+                                    for (let j = 0; j < rebootBoxes.length; j++) {
                                         if (vars[i].hasChildNodes() && vars[i].firstChild.nodeValue) {
                                             rebootBoxes[j].emptyElement();
                                             rebootBoxes[j].insertAdjacentHTML('afterbegin', vars[i].firstChild.nodeValue);
@@ -521,6 +532,17 @@ CanopyEnhancer.prototype.SetUpAJAX = function() {
                                 }
                             }
 
+                            if (_this.isTrafficPage()) {
+                                _this.updateTrafficData(
+                                    request.responseXML.getElementById(_this.inTrafficID).firstChild.nodeValue,
+                                    request.responseXML.getElementById(_this.outTrafficID).firstChild.nodeValue,
+                                    request.responseXML.getElementById(_this.inUcastPktsID).firstChild.nodeValue,
+                                    request.responseXML.getElementById(_this.outUcastPktsID).firstChild.nodeValue,
+                                    request.responseXML.getElementById(_this.inNUcastPktsID).firstChild.nodeValue,
+                                    request.responseXML.getElementById(_this.outNUcastPktsID).firstChild.nodeValue,
+                                );
+                            }
+
                             _this.homePageRender();
                             _this.APThroughputCalc();
                             _this.dataVCCalc();
@@ -533,10 +555,9 @@ CanopyEnhancer.prototype.SetUpAJAX = function() {
                     }
                 }
             };
-        }
-        clearInterval(document.ajaxtimerid);
+        };
         SetUpAJAX();
-        document.ajaxtimerid = setInterval(SetUpAJAX, (this.refreshTime * 1000));
+        //document.ajaxtimerid = setInterval(SetUpAJAX, (this.refreshTime * 1000));
     }
 };
 
@@ -545,8 +566,8 @@ CanopyEnhancer.prototype.SetUpAJAX = function() {
  * @returns {boolean}
  */
 CanopyEnhancer.prototype.getRadioMac = function() {
-    var stylesheethref = document.getElementsByTagName('link')[0].getAttribute('href');
-    var res = stylesheethref.match(/\_canopy\.css\?mac_esn\=([A-Fa-f0-9]{12})/);
+    let stylesheethref = document.getElementsByTagName('link')[0].getAttribute('href');
+    let res = stylesheethref.match(/\_canopy\.css\?mac_esn\=([A-Fa-f0-9]{12})/);
     if (res !== null) {
         this.currentRadioMAC = res[1].toUpperCase();
     } else {
@@ -560,8 +581,8 @@ CanopyEnhancer.prototype.getRadioMac = function() {
 CanopyEnhancer.prototype.loadSettings = function() {
     var _this = this;
     try {
-        var settings = JSON.parse(document.CGESettings);
-        for (var key in settings) {
+        let settings = JSON.parse(document.CGESettings);
+        for (let key in settings) {
             if (!settings.hasOwnProperty(key)) continue;
             _this.settings[key] = settings[key];
         }
@@ -877,14 +898,29 @@ CanopyEnhancer.prototype.realTimeTraffic = function() {
     if (_this.isTrafficPage()) {
         var sectionTitle = this.Sections[this.currentCatIndex].pages[this.currentPageIndex];
 
+        // TODO: refactor this section
         if (this.currentPageIndex === 7) {
             this.mainTrafficBlockID = document.getElementById('SectionEthernet');
+            // Octets
             this.inTrafficID = 'FecCb_ifmib_ifInOctets';
             this.outTrafficID = 'FecCb_ifmib_ifOutOctets';
+            // UcastPkts
+            this.inUcastPktsID = 'FecCb_ifmib_ifInUcastPkts';
+            this.outUcastPktsID = 'FecCb_ifmib_ifOutUcastPkts';
+            // NUcastPkts
+            this.inNUcastPktsID = 'FecCb_ifmib_ifInNUcastPkts';
+            this.outNUcastPktsID = 'FecCb_ifmib_ifOutNUcastPkts';
         } else {
             this.mainTrafficBlockID = document.getElementById('SectionRFCBStat');
+            // Octets
             this.inTrafficID = 'RfCb_ifmib_ifInOctets';
             this.outTrafficID = 'RfCb_ifmib_ifOutOctets';
+            // UcastPkts
+            this.inUcastPktsID = 'RfCb_ifmib_ifInUcastPkts';
+            this.outUcastPktsID = 'RfCb_ifmib_ifOutUcastPkts';
+            // NUcastPkts
+            this.inNUcastPktsID = 'RfCb_ifmib_ifInNUcastPkts';
+            this.outNUcastPktsID = 'RfCb_ifmib_ifOutNUcastPkts';
         }
 
         if ((this.refreshTime > 0)) {
@@ -949,7 +985,7 @@ CanopyEnhancer.prototype.realTimeTraffic = function() {
                         break;
                 }
 
-                var chartData = {
+                let chartData = {
                     labels: timeLabels,
                     datasets: [
                         {
@@ -975,7 +1011,7 @@ CanopyEnhancer.prototype.realTimeTraffic = function() {
                     ]
                 };
 
-                var chartOpt = {
+                let chartOpt = {
 
                     animation: true,
                     animationSteps: 20,
@@ -1033,14 +1069,14 @@ CanopyEnhancer.prototype.realTimeTraffic = function() {
                     loadCSS(this.settings.ChartJSURL);
                 }
 
-                var ctx = document.getElementById("RTGChart").getContext("2d");
+                let ctx = document.getElementById("RTGChart").getContext("2d");
                 this.realTimeTrafficChart = new Chart(ctx).Line(chartData, chartOpt);
                 document.getElementById('RTGLegend').emptyElement();
                 document.getElementById('RTGLegend').insertAdjacentHTML('afterbegin', this.realTimeTrafficChart.generateLegend())
 
             } else {
 
-                var el = document.createElement("span");
+                let el = document.createElement("span");
                 el.id = 'cge-CurrInTraffic-wrap';
                 el.className = 'cge-real-time-throughput cge-color-blue-cambium';
                 el.insertAdjacentHTML('afterbegin', ' (<span id="cge-CurrInTraffic">0.00</span> Mbps)</span>');
@@ -1059,8 +1095,25 @@ CanopyEnhancer.prototype.realTimeTraffic = function() {
                 );
             }
 
-            // Medusa sounding stats
+            // TODO: refactor
+            let pktsBlocks = [
+                this.inUcastPktsID,
+                this.outUcastPktsID,
+                this.inNUcastPktsID,
+                this.outNUcastPktsID
+            ];
 
+            // PPs stats
+            for (let i = 0; i < pktsBlocks.length; i++) {
+                let el = document.createElement("span");
+                el.id = 'cge-CurrInTraffic-wrap';
+                el.className = 'cge-real-time-throughput cge-color-blue-cambium';
+                el.insertAdjacentHTML('afterbegin', ' (<span id="cge-'+pktsBlocks[i]+'">0</span> pps)</span>');
+                document.getElementById(pktsBlocks[i]).parentNode.insertBefore(
+                    el,
+                    document.getElementById(pktsBlocks[i]).nextSibling
+                );
+            }
 
         } else {
             this.mainTrafficBlockID.insertAdjacentHTML(
@@ -1083,7 +1136,7 @@ CanopyEnhancer.prototype.realTimeTraffic = function() {
  * Value per second calculation
  * @param current
  * @param previous
- * @returns {number}
+ * @returns Number
  */
 CanopyEnhancer.prototype.calcPerSeconds = function(current, previous) {
     return ((current - previous) / this.refreshTime);
@@ -1092,24 +1145,43 @@ CanopyEnhancer.prototype.calcPerSeconds = function(current, previous) {
 /**
  * Updates traffic data from webpage
  */
-CanopyEnhancer.prototype.updateTrafficData = function (currInOctets, currOutOctets) {
+CanopyEnhancer.prototype.updateTrafficData = function (
+    currInOctets,
+    currOutOctets,
+    currInUcastPkts,
+    currOutUcastPkts,
+    currInNUcastPkts,
+    currOutNUcastPkts
+) {
     currInOctets = parseInt(currInOctets);
     currOutOctets = parseInt(currOutOctets);
+    currInUcastPkts = parseInt(currInUcastPkts);
+    currOutUcastPkts = parseInt(currOutUcastPkts);
+    currInNUcastPkts = parseInt(currInNUcastPkts);
+    currOutNUcastPkts = parseInt(currOutNUcastPkts);
 
     if (this.trafficData.started) {
 
-        this.trafficData.inTraffic = ((currInOctets - this.trafficData.prevInOctets) / this.refreshTime).byte2Mbit().round2().toFixed(2);
-        this.trafficData.outTraffic = ((currOutOctets - this.trafficData.prevOutOctets) / this.refreshTime).byte2Mbit().round2().toFixed(2);
+        this.trafficData.inTraffic = this.calcPerSeconds(currInOctets, this.trafficData.prevInOctets).byte2Mbit().round2();
+        this.trafficData.outTraffic = this.calcPerSeconds(currOutOctets, this.trafficData.prevOutOctets).byte2Mbit().round2();
+        this.trafficData.inUcastPps = Math.round(this.calcPerSeconds(currInUcastPkts, this.trafficData.prevInUcastPkts));
+        this.trafficData.outUcastPps = Math.round(this.calcPerSeconds(currOutUcastPkts, this.trafficData.prevOutUcastPkts));
+        this.trafficData.inNUcastPps = Math.round(this.calcPerSeconds(currInNUcastPkts, this.trafficData.prevInNUcastPkts));
+        this.trafficData.outNUcastPps = Math.round(this.calcPerSeconds(currOutNUcastPkts, this.trafficData.prevOutNUcastPkts));
 
         this.trafficData.prevInOctets = currInOctets;
         this.trafficData.prevOutOctets = currOutOctets;
+        this.trafficData.prevInUcastPkts = currInUcastPkts;
+        this.trafficData.prevOutUcastPkts = currOutUcastPkts;
+        this.trafficData.prevInNUcastPkts = currInNUcastPkts;
+        this.trafficData.prevOutNUcastPkts = currOutNUcastPkts;
 
         /*
          * UPDATE GUI
          */
         if (this.settings.cge_rtt_type === 'graph') {
-            var tmpTime = new Date();
-            var timestring = tmpTime.getHours().leadingZero() + ':'+tmpTime.getMinutes().leadingZero()+':'+tmpTime.getSeconds().leadingZero();
+            let tmpTime = new Date();
+            let timestring = tmpTime.getHours().leadingZero() + ':'+tmpTime.getMinutes().leadingZero()+':'+tmpTime.getSeconds().leadingZero();
 
             this.realTimeTrafficChart.addData(
                 [this.trafficData.inTraffic, this.trafficData.outTraffic],
@@ -1124,12 +1196,29 @@ CanopyEnhancer.prototype.updateTrafficData = function (currInOctets, currOutOcte
             document.getElementById('cge-CurrOutTraffic').textContent = this.trafficData.outTraffic.toString();
         }
 
+        document.getElementById('cge-'+this.inUcastPktsID).textContent = this.trafficData.inUcastPps.toString();
+        document.getElementById('cge-'+this.outUcastPktsID).textContent = this.trafficData.outUcastPps.toString();
+        document.getElementById('cge-'+this.inNUcastPktsID).textContent = this.trafficData.inNUcastPps.toString();
+        document.getElementById('cge-'+this.outNUcastPktsID).textContent = this.trafficData.outNUcastPps.toString();
+
     } else {
         this.trafficData.prevInOctets = currInOctets;
         this.trafficData.inTraffic = 0;
 
         this.trafficData.prevOutOctets = currOutOctets;
         this.trafficData.outTraffic = 0;
+
+        this.trafficData.prevInUcastPkts = currInUcastPkts;
+        this.trafficData.inUcastPps = 0;
+
+        this.trafficData.prevOutUcastPkts = currOutUcastPkts;
+        this.trafficData.outUcastPps = 0;
+
+        this.trafficData.prevInNUcastPkts = currInNUcastPkts;
+        this.trafficData.inNUcastPps = 0;
+
+        this.trafficData.prevOutNUcastPkts = currOutNUcastPkts;
+        this.trafficData.outNUcastPps = 0;
 
         this.trafficData.started = true;
     }
@@ -1724,7 +1813,7 @@ CanopyEnhancer.prototype.APThroughput = function() {
                 '<div class="cge-error">Set Webpage Auto Update > 0 for real time stats (Configuration => General)</div>'
             );
         } else {
-
+            this.APThroughputCalc();
         }
     }
 };
@@ -1735,11 +1824,11 @@ CanopyEnhancer.prototype.APThroughput = function() {
  */
 CanopyEnhancer.prototype.APThroughputCalc = function() {
     if (this.isAPThroughputPage()) {
-        var table = document.getElementById('LuidOLtable');
-        var tbody = table.querySelector('tbody');
-        var rows = tbody.querySelectorAll('tr');
-        var totalInTraffic = 0;
-        var totalOutTraffic = 0;
+        let table = document.getElementById('LuidOLtable');
+        let tbody = table.querySelector('tbody');
+        let rows = tbody.querySelectorAll('tr');
+        let totalInTraffic = 0;
+        let totalOutTraffic = 0;
         if (rows.length > 0) {
 
             table.querySelector('thead tr:nth-child(1) th:nth-child(3)').setAttribute('colspan', 14);
@@ -1856,6 +1945,8 @@ CanopyEnhancer.prototype.dataVC = function() {
                 'beforebegin',
                 '<div class="cge-error">Set Webpage Auto Update > 0 for real time stats (Configuration => General)</div>'
             );
+        } else {
+            this.dataVCCalc();
         }
     }
 };
@@ -1866,15 +1957,15 @@ CanopyEnhancer.prototype.dataVC = function() {
  */
 CanopyEnhancer.prototype.dataVCCalc = function() {
     if (this.isDataVCPage() && this.settings.cge_ap_data_vc === 1) {
-        var table = document.getElementById('datavctable');
-        var tbody = table.querySelector('tbody');
-        var rows = tbody.querySelectorAll('tr');
-        var totalInTraffic = 0;
-        var totalOutTraffic = 0;
+        let table = document.getElementById('datavctable');
+        let tbody = table.querySelector('tbody');
+        let rows = tbody.querySelectorAll('tr');
+        let totalInTraffic = 0;
+        let totalOutTraffic = 0;
 
-        var isPre151 = (document.getElementById('datavctablefragmodulation') === null);
+        let isPre151 = (document.getElementById('datavctablefragmodulation') === null);
 
-        var tableConfig;
+        let tableConfig;
 
         switch (this.currentRadioModulation) {
             case PLATFORM_FSK:
@@ -2000,7 +2091,7 @@ CanopyEnhancer.prototype.dataVCCalc = function() {
             );
 
             for(var i = 0; i <  rows.length; i++) {
-                var LUID, VCType;
+                let LUID, VCType;
                 if (rows[i].querySelector('td:nth-child(1)').textContent.length === 3) {
                     LUID = intval(rows[i].querySelector('td:nth-child(1)').textContent);
                     VCType = 'high';
@@ -2016,14 +2107,14 @@ CanopyEnhancer.prototype.dataVCCalc = function() {
                 }
 
                 if (LUID <= 255) {
-                    var InTraffic, OutTraffic, InUPPS, InNuPPS, OutUPPS, OutNuPPS;
-                    var currInOctets = intval(rows[i].querySelector('td:nth-child('+tableConfig[VCType].currInOctets+')').textContent);
-                    var currOutOctets = intval(rows[i].querySelector('td:nth-child('+tableConfig[VCType].currOutOctets+')').textContent);
+                    let InTraffic, OutTraffic, InUPPS, InNuPPS, OutUPPS, OutNuPPS;
+                    let currInOctets = intval(rows[i].querySelector('td:nth-child('+tableConfig[VCType].currInOctets+')').textContent);
+                    let currOutOctets = intval(rows[i].querySelector('td:nth-child('+tableConfig[VCType].currOutOctets+')').textContent);
 
-                    var currInUPackets = intval(rows[i].querySelector('td:nth-child('+tableConfig[VCType].currInUPackets+')').textContent);
-                    var currInNuPackets = intval(rows[i].querySelector('td:nth-child('+tableConfig[VCType].currInNuPackets+')').textContent);
-                    var currOutUPackets = intval(rows[i].querySelector('td:nth-child('+tableConfig[VCType].currOutUPackets+')').textContent);
-                    var currOutNuPackets = intval(rows[i].querySelector('td:nth-child('+tableConfig[VCType].currOutNuPackets+')').textContent);
+                    let currInUPackets = intval(rows[i].querySelector('td:nth-child('+tableConfig[VCType].currInUPackets+')').textContent);
+                    let currInNuPackets = intval(rows[i].querySelector('td:nth-child('+tableConfig[VCType].currInNuPackets+')').textContent);
+                    let currOutUPackets = intval(rows[i].querySelector('td:nth-child('+tableConfig[VCType].currOutUPackets+')').textContent);
+                    let currOutNuPackets = intval(rows[i].querySelector('td:nth-child('+tableConfig[VCType].currOutNuPackets+')').textContent);
 
                     if (this.APThroughputSM[LUID] !== undefined) {
                         /*
@@ -2134,19 +2225,19 @@ CanopyEnhancer.prototype.dataVCCalc = function() {
 CanopyEnhancer.prototype.EventLog = function() {
     if ( (this.currentCatIndex === 0 && this.currentPageIndex === 5  && (this.currentRadioModulation === 'MIMO_OFDM' || this.currentRadioModulation === 'FSK')) ||
         (this.currentCatIndex === 0 && this.currentPageIndex === 4  && this.currentRadioModulation === 'SISO_OFDM')) {
-        var ContentBlock = document.getElementById('SysLoga');
-        var ContentBlockHTML = ContentBlock.innerHTML;
+        let ContentBlock = document.getElementById('SysLoga');
+        let ContentBlockHTML = ContentBlock.innerHTML;
 
-        var checkSysStartup = ContentBlockHTML.match(/\*System Startup\*/igm);
+        let checkSysStartup = ContentBlockHTML.match(/\*System Startup\*/igm);
 
-        var logwrapper = document.createElement('div');
+        let logwrapper = document.createElement('div');
         logwrapper.id = 'cge-event-log-wrapper';
 
-        var div, table, tbody, tr, td, rows;
+        let div, table, tbody, tr, td, rows;
 
         if (checkSysStartup) {
 
-            var splittedLog = ContentBlockHTML.split("******System Startup******");
+            let splittedLog = ContentBlockHTML.split("******System Startup******");
 
             div = document.createElement('div');
             div.className = 'cge-event-log-divider';
@@ -2154,11 +2245,11 @@ CanopyEnhancer.prototype.EventLog = function() {
             table.className = 'table table-striped table-responsive table-condensed';
             tbody = document.createElement('tbody');
 
-            for (var i = 0; i < splittedLog.length; i++) {
+            for (let i = 0; i < splittedLog.length; i++) {
 
                 rows = splittedLog[i].split("<br>");
 
-                for (var k = 0; k < rows.length; k++) {
+                for (let k = 0; k < rows.length; k++) {
                     if (rows[k] !== "" && rows[k] !== " ") {
                         tr = document.createElement('tr');
                         td = document.createElement('td');
@@ -2203,7 +2294,7 @@ CanopyEnhancer.prototype.EventLog = function() {
 
                 rows = ContentBlockHTML.split("<br>");
 
-                for (var k = 0; k < rows.length; k++) {
+                for (let k = 0; k < rows.length; k++) {
                     if (rows[k] !== "" && rows[k] !== " ") {
                         tr = document.createElement('tr');
                         td = document.createElement('td');

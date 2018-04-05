@@ -1,4 +1,12 @@
-## Version 1.8.11
+## Version 1.8.13
+
+Changes:
+* Added pps calculation in Ethernet and Radio tabs
+
+Bugfixes:
+* Errors in SetUpAJAX
+
+## Version 1.8.12
 
 Changes:
 * macvendors.co is broken, I've created a new service for mac address lookup (maclookup.info) and changed jsonp function endpoint
