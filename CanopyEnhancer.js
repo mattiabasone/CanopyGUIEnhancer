@@ -556,8 +556,9 @@ CanopyEnhancer.prototype.SetUpAJAX = function() {
                 }
             };
         };
+        clearInterval(document.ajaxtimerid);
         SetUpAJAX();
-        //document.ajaxtimerid = setInterval(SetUpAJAX, (this.refreshTime * 1000));
+        document.ajaxtimerid = setInterval(SetUpAJAX, (this.refreshTime * 1000));
     }
 };
 
