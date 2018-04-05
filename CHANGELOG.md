@@ -1,3 +1,8 @@
+## Version 1.8.14
+
+Bugfixes:
+* SetUpAJAX() initialization errors (issue #7)
+
 ## Version 1.8.13
 
 Changes:
