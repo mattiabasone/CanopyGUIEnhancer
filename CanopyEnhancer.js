@@ -7,6 +7,7 @@ const PLATFORM_FSK = 'FSK';
  * @constructor
  */
 var CanopyEnhancer = function() {
+    this.browser =  'chrome';
     this.refreshTime = 0;
     this.tooltipMACNode = {};
     this.tooltipIPNode = {};
@@ -339,17 +340,29 @@ var CanopyEnhancer = function() {
  * Initialize CanopyEnhancer
  */
 CanopyEnhancer.prototype.initialize = function() {
+    this.browser = (function(){
+        let M = navigator.userAgent.match(/(opera|chrome|safari|firefox|msie)\/?\s*(\.?\d+(\.\d+)*)/i);
+        if (typeof M[1] === undefined) {
+            return 'chrome';
+        }
+        return M[1].toLowerCase();
+    })();
+
     this.getRadioMac();
     if (this.currentRadioMAC !== '000000000000') {
 
         this.loadSettings();
 
-        var page = document.getElementById("page");
-        var title = page.querySelector("h2");
+        if (this.debugMessages() === true) {
+            console.log("Browser platform: "+this.browser);
+        }
+
+        let page = document.getElementById("page");
+        let title = page.querySelector("h2");
         if (title !== null) {
-            var titleString = title.textContent;
-            var deviceType = null;
-            var resDevType = titleString.match(/.*(?:GHz|MHz)(?:\sAdjustable\sPower)?\s\-\s([a-zA-Z\-\s]+)\s\-\s([A-Fa-f0-9\-]{17})/);
+            let titleString = title.textContent;
+            let deviceType = null;
+            let resDevType = titleString.match(/.*(?:GHz|MHz)(?:\sAdjustable\sPower)?\s\-\s([a-zA-Z\-\s]+)\s\-\s([A-Fa-f0-9\-]{17})/);
 
             if (resDevType !== null) {
                 deviceType = resDevType[1];
@@ -390,7 +403,7 @@ CanopyEnhancer.prototype.initialize = function() {
         this.getRefreshTime();
 
         // Site name in title
-        var strongSiteName = document.createElement('strong');
+        let strongSiteName = document.createElement('strong');
         strongSiteName.className = 'cge-color-blue-cambium';
         strongSiteName.appendChild(document.createTextNode(this.getSiteNameTitle()+': '));
 
@@ -464,7 +477,7 @@ CanopyEnhancer.prototype.getDevType = function(string) {
 CanopyEnhancer.prototype.SetUpAJAX = function() {
 
     if (this.refreshTime > 0) {
-        var _this = this;
+        let _this = this;
 
         window.SetUpAJAX = function () {
             var request = document.request;
@@ -556,9 +569,13 @@ CanopyEnhancer.prototype.SetUpAJAX = function() {
                 }
             };
         };
+
         clearInterval(document.ajaxtimerid);
         SetUpAJAX();
-        document.ajaxtimerid = setInterval(SetUpAJAX, (this.refreshTime * 1000));
+        // Firefox behaviour is different
+        if (this.browser !== 'firefox') {
+            document.ajaxtimerid = setInterval(SetUpAJAX, (this.refreshTime * 1000));
+        }
     }
 };
 
