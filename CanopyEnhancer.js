@@ -572,10 +572,7 @@ CanopyEnhancer.prototype.SetUpAJAX = function() {
 
         clearInterval(document.ajaxtimerid);
         SetUpAJAX();
-        // Firefox behaviour is different
-        if (this.browser !== 'firefox') {
-            document.ajaxtimerid = setInterval(SetUpAJAX, (this.refreshTime * 1000));
-        }
+        document.ajaxtimerid = setInterval(SetUpAJAX, (this.refreshTime * 1000));
     }
 };
 

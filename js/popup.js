@@ -52,14 +52,14 @@ window.onload = function() {
 
     // Add version
 
-    var version;
+    let version;
     if (typeof chrome.app !== 'undefined') {
         version = chrome.app.getDetails().version;
     } else {
         version = browser.runtime.getManifest().version;
     }
-    var versionReplaced = Number(version.replace(/\./g, ''));
-    var linkChangelog = document.createElement('a');
+    let versionReplaced = Number(version.replace(/\./g, ''));
+    let linkChangelog = document.createElement('a');
     linkChangelog.href = 'https://github.com/mattiabasone/CanopyGUIEnhancer/blob/master/CHANGELOG.md#version-'+versionReplaced;
     linkChangelog.target = '_blank';
     linkChangelog.appendChild(document.createTextNode('Version '+version));

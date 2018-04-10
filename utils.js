@@ -103,6 +103,14 @@ Number.prototype.leadingZero = function() {
 };
 
 /**
+ *
+ * @returns {string}
+ */
+Date.prototype.leadingZero = function() {
+    return ('0'+this).slice(-2);
+};
+
+/**
  * IndexOf with regex
  *
  * @param regex
