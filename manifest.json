@@ -10,7 +10,7 @@
 
   "browser_action": {
     "default_icon": "icons/icon_144px.png",
-    "default_popup": "html/popup.html",
+    "default_popup": "popup/index.html",
     "default_title": "Canopy GUI Enhancer - Edit settings"
   },
   "icons": {
@@ -38,7 +38,7 @@
       "run_at": "document_idle"
     }],
   "web_accessible_resources":[
-    "js/build/cge.js",
+    "cge.js",
     "css/bootstrap-mini.css",
     "css/gui.css",
     "css/style.css",

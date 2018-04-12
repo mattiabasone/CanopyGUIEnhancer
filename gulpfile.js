@@ -1,12 +1,14 @@
-var gulp = require('gulp');
-var concat = require('gulp-concat');
+let gulp = require('gulp');
+let uglify = require('gulp-uglify-es').default;
+let concat = require('gulp-concat');
 
 gulp.task('compile', function() {
     gulp.src([
-        './js/src/lib/Chart.min.js',
-        './js/src/utils.js',
-        './js/src/CanopyEnhancer.js'
+        './src/lib/Chart.min.js',
+        './src/utils.js',
+        './src/CanopyEnhancer.js'
     ])
         .pipe(concat('cge.js'))
-        .pipe(gulp.dest('./js/build/'))
+        .pipe(uglify())
+        .pipe(gulp.dest('./'))
 });

@@ -4,6 +4,7 @@ var formFields = [
     'cge_ip_lookup',
     'cge_mac_lookup',
     'cge_rtt_type',
+    'cge_rtt_graph_entries',
     'cge_ap_evaluation',
     'cge_ap_throughput',
     'cge_ap_data_vc',
@@ -11,25 +12,37 @@ var formFields = [
     'cge_debug'
 ];
 
+function rttOptionsDisplay(value) {
+    if (value === 'string') {
+        document.getElementById('cge_rtt_graph_entries-wrapper').style.display = 'none';
+    } else {
+        document.getElementById('cge_rtt_graph_entries-wrapper').style.display = 'block';
+    }
+}
+
 window.onload = function() {
 
+    document.getElementById('cge_rtt_type').addEventListener("change", function() {
+        rttOptionsDisplay(document.getElementById('cge_rtt_type').value);
+    });
+
     chrome.storage.local.get(null, function(data) {
-        var settingsInput;
+        let settingsInput;
         if (chrome.runtime.lastError || !data.hasOwnProperty('cge_enabled')) {
-            for (var i=0;i<formFields.length;i++) {
+            for (let i=0;i<formFields.length;i++) {
                 settingsInput = document.getElementById(formFields[i]);
-                if (settingsInput.type == 'checkbox') {
+                if (settingsInput.type === 'checkbox') {
                     settingsInput.checked = true;
                 }
             }
 
         } else {
-            for (var key in data) {
+            for (let key in data) {
                 if (!data.hasOwnProperty(key)) continue;
                 settingsInput = document.getElementById(key);
                 if (settingsInput !== null) {
-                    var tagName = settingsInput.tagName.toLowerCase();
-                    if (tagName == 'input') {
+                    let tagName = settingsInput.tagName.toLowerCase();
+                    if (tagName === 'input') {
                         switch (settingsInput.type) {
                             case 'checkbox':
                                 if (data[key] === 1 || data[key] === undefined) {
@@ -44,6 +57,13 @@ window.onload = function() {
                         }
                     } else {
                         settingsInput.value = data[key];
+                        if (key === 'cge_rtt_type') {
+                            if (data[key] === 'string') {
+                                document.getElementById('cge_rtt_graph_entries-wrapper').style.display = 'none';
+                            } else {
+                                document.getElementById('cge_rtt_graph_entries-wrapper').style.display = 'block';
+                            }
+                        }
                     }
                 }
             }
@@ -68,7 +88,7 @@ window.onload = function() {
         linkChangelog
     );
 
-    var formSettings = document.forms.cge_form_settings;
+    let formSettings = document.forms.cge_form_settings;
 
     formSettings.addEventListener("submit", function(e) {
         e.preventDefault();

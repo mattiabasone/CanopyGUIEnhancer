@@ -34,6 +34,7 @@ chrome.storage.local.get(null, function (data) {
                     cge_ip_lookup: 1,
                     cge_mac_lookup: 1,
                     cge_rtt_type: 'string',
+                    cge_rtt_graph_entries: 10,
                     cge_ap_evaluation: 1,
                     cge_ap_throughput: 1,
                     cge_ap_data_vc: 1,
@@ -63,8 +64,7 @@ chrome.storage.local.get(null, function (data) {
                         loadExtensionCSS('css/themes/'+settingsObj.cge_theme+'.css');
                     }
                 }
-
-                loadExtensionJS('js/build/cge.js');
+                loadExtensionJS('cge.js');
             }
         }
     }

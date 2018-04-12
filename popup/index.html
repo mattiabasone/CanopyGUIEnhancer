@@ -5,7 +5,7 @@
     <link rel="stylesheet" type="text/css" href="../css/bootstrap-mini.css" />
     <link rel="stylesheet" type="text/css" href="../css/style.css" />
     <link rel="stylesheet" type="text/css" href="../css/popup.css" />
-    <script src="../js/src/pages/popup.js"></script>
+    <script src="script.js"></script>
 </head>
 <body id="cge_popup_body">
 <div id="cge_popup_wrapper">
@@ -53,6 +53,15 @@
                 <select name="cge_rtt_type" id="cge_rtt_type">
                     <option value="string" selected>String</option>
                     <option value="graph">Graph</option>
+                </select>
+            </div>
+
+            <div id="cge_rtt_graph_entries-wrapper" class="form-group">
+                <label for="cge_rtt_graph_entries">Graph history entries</label>
+                <select name="cge_rtt_graph_entries" id="cge_rtt_graph_entries">
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                    <option value="20">30</option>
                 </select>
             </div>
 
