@@ -482,7 +482,10 @@ CanopyEnhancer.prototype.SetUpAJAX = function() {
     if (this.refreshTime > 0) {
         let _this = this;
 
-        window.SetUpAJAX = function () {
+        function CGESetUpAJAX() {
+            if (typeof document.ajaxtimerid !== "undefined") {
+                clearInterval(document.ajaxtimerid);
+            }
             let request = document.request;
             if (typeof request === 'undefined' || (request.readyState > 0 && request.readyState < 4)) {
                 return;
@@ -522,11 +525,11 @@ CanopyEnhancer.prototype.SetUpAJAX = function() {
                                             parent.emptyElement();
                                             parent.insertAdjacentHTML('afterbegin', htmlCode);
                                             if (document.createEvent) {
-                                                var event = document.createEvent("Event");
+                                                let event = document.createEvent("Event");
                                                 event.initEvent("change", true, true);
                                                 parent.dispatchEvent(event);
                                             } else if (document.createEventObject) {
-                                                var evObj = document.createEventObject();
+                                                let evObj = document.createEventObject();
                                                 parent.fireEvent("onclick", evObj);
                                             }
                                         }
@@ -566,17 +569,16 @@ CanopyEnhancer.prototype.SetUpAJAX = function() {
                             _this.lastRefresh = Date.now();
                         }
                     } else if (request.status === 401) {
-                        clearInterval(document.ajaxtimerid);
+                        clearInterval(document.cge_ajaxtimerid);
                         if (!document.rebootId)
                             window.location.reload();
                     }
                 }
             };
-        };
+        }
 
-        clearInterval(document.ajaxtimerid);
-        SetUpAJAX();
-        document.ajaxtimerid = setInterval(SetUpAJAX, (this.refreshTime * 1000));
+        CGESetUpAJAX();
+        document.cge_ajaxtimerid = setInterval(CGESetUpAJAX, (this.refreshTime * 1000));
     }
 };
 
@@ -1316,11 +1318,10 @@ CanopyEnhancer.prototype.removeSoundingHeaders = function(text) {
  * Table rendering
  */
 CanopyEnhancer.prototype.renderSoundingStats = function() {
-
-    var _this = this;
-    var soundingStatsBlock = document.getElementById('SectionSoundingStatistics');
-    var soundingStatsLog = document.getElementById('SoundingStatsLog');
-    var soundingStatsTable = document.querySelector('#SectionSoundingStatistics table.section');
+    let _this = this;
+    let soundingStatsBlock = document.getElementById('SectionSoundingStatistics');
+    let soundingStatsLog = document.getElementById('SoundingStatsLog');
+    let soundingStatsTable = document.querySelector('#SectionSoundingStatistics table.section');
 
     if (soundingStatsLog) {
 
@@ -1328,15 +1329,15 @@ CanopyEnhancer.prototype.renderSoundingStats = function() {
         this.medusaObserver = new MutationObserver(function (mutations) {
             if (mutations && mutations.length > 0) {
 
-                var rawLog = soundingStatsLog.innerHTML;
-                var tbodyImprovedTable = document.getElementById('cge-sounding-tbody');
+                let rawLog = soundingStatsLog.innerHTML;
+                let tbodyImprovedTable = document.getElementById('cge-sounding-tbody');
                 if (!tbodyImprovedTable) {
                     // Create the table
-                    var soundingTable = '';
+                    let soundingTable = '';
                     soundingTable += '<table class="table section">';
                     soundingTable += '<thead>';
                     soundingTable += '<tr>';
-                    for (var i = 0; i < _this.soundingStatsFields.length; i++) {
+                    for (let i = 0; i < _this.soundingStatsFields.length; i++) {
                         soundingTable += '<td>' + _this.soundingStatsFields[i].replace(':', '') + '</td>';
                     }
                     soundingTable += '</thead>';
@@ -1355,16 +1356,16 @@ CanopyEnhancer.prototype.renderSoundingStats = function() {
                     tbodyImprovedTable.emptyElement();
                 }
 
-                var splittedLog = rawLog.split("<br>");
-                var soundingTbody = '';
+                let splittedLog = rawLog.split("<br>");
+                let soundingTbody = '';
                 for (i = 0; i < splittedLog.length; i++) {
-                    var row = _this.replaceSoundingCommas(splittedLog[i]);
+                    let row = _this.replaceSoundingCommas(splittedLog[i]);
                     row = _this.removeSoundingHeaders(row);
-                    var splittedRow = row.split("|");
+                    let splittedRow = row.split("|");
                     if (splittedRow.length > 1) {
                         soundingTable += '<tr>';
-                        for (var k = 0; k < splittedRow.length; k++) {
-                            var cellContent = splittedRow[k].trim();
+                        for (let k = 0; k < splittedRow.length; k++) {
+                            let cellContent = splittedRow[k].trim();
                             cellContent = escapeHTML(cellContent);
 
                             switch (k) {
@@ -1397,7 +1398,7 @@ CanopyEnhancer.prototype.renderSoundingStats = function() {
         });
 
         // configuration of the observer:
-        var config = {
+        let config = {
             attributes: true,
             childList: true,
             characterData: true
@@ -1423,18 +1424,18 @@ CanopyEnhancer.prototype.renderSoundingStats = function() {
  * @returns {boolean}
  */
 CanopyEnhancer.prototype.extractAPEvaluationData = function() {
-    var rawAPEval = this.apEvaluationBlock.innerHTML;
-    var tmpAPEvalFields = this.APEvaluationFields[this.currentRadioModulation];
+    let rawAPEval = this.apEvaluationBlock.innerHTML;
+    let tmpAPEvalFields = this.APEvaluationFields[this.currentRadioModulation];
 
-    var regex = /<br\s*[\/]?>/gi;
+    let regex = /<br\s*[\/]?>/gi;
     rawAPEval = rawAPEval.replace(regex, " ");
     rawAPEval = rawAPEval.replace(/\&nbsp\;/gi, " ");
-    var splittedEval = rawAPEval.split("*********************************************");
+    let splittedEval = rawAPEval.split("*********************************************");
 
     splittedEval[0] = splittedEval[0].replace(/([\n]+)/g, " ");
     splittedEval[0] = splittedEval[0].replace(/([\s]+)/g, " ");
 
-    var tmpFirstRowMatch = splittedEval[0].match(/AP Selection Method used\:(.*)\sCurrent entry index\:/);
+    let tmpFirstRowMatch = splittedEval[0].match(/AP Selection Method used\:(.*)\sCurrent entry index\:/);
     if (tmpFirstRowMatch) {
         this.apSelectionMethod = tmpFirstRowMatch[1];
     }
@@ -1454,19 +1455,19 @@ CanopyEnhancer.prototype.extractAPEvaluationData = function() {
     }
 
     delete(splittedEval[0]);
-    for (var i=1;i<splittedEval.length;i++) {
-        var index = i - 1;
-        var tmpStr = splittedEval[i];
-        var tmpObj = {};
-        var tmpMatch;
-        var tmpRegexp;
+    for (let i=1;i<splittedEval.length;i++) {
+        let index = i - 1;
+        let tmpStr = splittedEval[i];
+        let tmpObj = {};
+        let tmpMatch;
+        let tmpRegexp;
 
-        for(var k = 0;k < tmpAPEvalFields.length;k++) {
-            var kplus = k+1;
-            var pre_pattern = RegExp.quote(tmpAPEvalFields[k]);
+        for(let k = 0;k < tmpAPEvalFields.length;k++) {
+            let kplus = k+1;
+            let pre_pattern = RegExp.quote(tmpAPEvalFields[k]);
 
             if (kplus < tmpAPEvalFields.length) {
-                var post_pattern = RegExp.quote(tmpAPEvalFields[kplus]);
+                let post_pattern = RegExp.quote(tmpAPEvalFields[kplus]);
 
                 // Fix for sw version < 14.1.1
                 if (post_pattern === 'Beacon Receive Power' && this.currentRadioModulation === 'MIMO_OFDM') {
@@ -1502,7 +1503,6 @@ CanopyEnhancer.prototype.extractAPEvaluationData = function() {
         }
         this.APEvaluationObj[index] = tmpObj;
     }
-
     return (this.APEvaluationObj.length > 0);
 };
 
@@ -1510,8 +1510,7 @@ CanopyEnhancer.prototype.extractAPEvaluationData = function() {
  * Render AP Evaluation data in HTML
  */
 CanopyEnhancer.prototype.renderBetterEvaluationTemplate = function() {
-
-    var betterEvalBlock = document.getElementById('betterEvaluation');
+    let betterEvalBlock = document.getElementById('betterEvaluation');
     if (typeof(betterEvalBlock) === 'undefined' || betterEvalBlock == null) {
         betterEvalBlock = document.createElement("div");
         betterEvalBlock.id = 'betterEvaluation';
@@ -1519,7 +1518,7 @@ CanopyEnhancer.prototype.renderBetterEvaluationTemplate = function() {
         this.apEvaluationBlock.parentNode.insertBefore(betterEvalBlock, this.apEvaluationBlock.nextSibling);
     }
 
-    var evaluationContent = '';
+    let evaluationContent = '';
     evaluationContent += "<div class='betterEvaluationHead'> <b>AP Selection Method:</b> "+this.apSelectionMethod+' - ';
     evaluationContent += ' <b>Current evaluation entry:</b> <a href="#cge-ap-eval-entry-'+this.currentEvaluatinEntry+'">'+this.currentEvaluatinEntry+'</a> - ';
     evaluationContent += " <b>Session status:</b> "+this.currentSessionStatus;
@@ -1528,13 +1527,13 @@ CanopyEnhancer.prototype.renderBetterEvaluationTemplate = function() {
     }
     evaluationContent += "</div><hr /><br />";
 
-    for(var i = 0;i<this.APEvaluationObj.length;i++) {
-        var evalEntry = this.APEvaluationObj[i];
-        var currIndex = Number(evalEntry['Index']);
+    for(let i = 0;i<this.APEvaluationObj.length;i++) {
+        let evalEntry = this.APEvaluationObj[i];
+        let currIndex = Number(evalEntry['Index']);
         delete evalEntry['Index'];
 
-        var insRow = true;
-        var counter = 0;
+        let insRow = true;
+        let counter = 0;
         evaluationContent += '<div class="cge-ap-evaluation-entry-title">';
         evaluationContent += '<a name="cge-ap-eval-entry-'+currIndex+'"></a>Entry: ' + currIndex;
         if (currIndex == this.currentEvaluatinEntry) {
@@ -1542,7 +1541,7 @@ CanopyEnhancer.prototype.renderBetterEvaluationTemplate = function() {
         }
         evaluationContent += '</div>';
         evaluationContent += '<table class="table table-responsive table-striped table-condensed table-bordered cge-ap-evaluation-entry-table"><tbody>';
-        for (var prop in evalEntry) {
+        for (let prop in evalEntry) {
             if(!evalEntry.hasOwnProperty(prop)) continue;
             counter++;
             if (insRow === true) {
@@ -1552,7 +1551,7 @@ CanopyEnhancer.prototype.renderBetterEvaluationTemplate = function() {
             switch (prop) {
                 case 'Beacon Receive Power':
                 case 'Beacon Receive Power Level':
-                    var tmpres = evalEntry[prop].match(/\-(([0-9]+)(\.([0-9]))?)/);
+                    let tmpres = evalEntry[prop].match(/\-(([0-9]+)(\.([0-9]))?)/);
                     if (tmpres) {
                         var tmpsignal = parseFloat(tmpres[1]);
                         tmpsignal = -tmpsignal;
@@ -1604,7 +1603,7 @@ CanopyEnhancer.prototype.betterEvaluation = function() {
         if (typeof this.APEvaluationFields[this.currentRadioModulation] !== 'undefined') {
             if (this.extractAPEvaluationData()) {
                 if (this.refreshTime > 0) {
-                    var _this = this;
+                    let _this = this;
                     _this.renderBetterEvaluationTemplate();
                     setInterval(function () {
                         _this.extractAPEvaluationData();
@@ -1628,15 +1627,15 @@ CanopyEnhancer.prototype.betterEvaluation = function() {
  * @constructor
  */
 CanopyEnhancer.prototype.MACLookUp = function(block) {
-    var _this = this;
-    var blockRect = block.getBoundingClientRect();
-    var macaddress = block.textContent.trimBlank();
+    let _this = this;
+    let blockRect = block.getBoundingClientRect();
+    let macaddress = block.textContent.trimBlank();
     block.classList.add('cge-highlight');
 
     if (macaddress.isMAC()) {
         jsonp('https://maclookup.info/api/jsonp/'+macaddress, function(response) {
             if (response.ok !== undefined) {
-                var attrContent;
+                let attrContent;
                 if (_this.debugMessages() === true) {
                     console.log(response);
                 }
@@ -1653,8 +1652,8 @@ CanopyEnhancer.prototype.MACLookUp = function(block) {
                 _this.tooltipMACNode.emptyElement();
                 _this.tooltipMACNode.appendChild(document.createTextNode(attrContent));
                 _this.tooltipMACNode.style.display = 'block';
-                var tooltipRect = _this.tooltipMACNode.getBoundingClientRect();
-                _this.tooltipMACNode.style.top = ( (blockRect.top + document.body.scrollTop) - (tooltipRect.height) - 5) + "px";
+                let tooltipRect = _this.tooltipMACNode.getBoundingClientRect();
+                _this.tooltipMACNode.style.top = ( (blockRect.top + document.scrollingElement.scrollTop) - (tooltipRect.height) - 5) + "px";
                 _this.tooltipMACNode.style.left = ( (blockRect.left + (blockRect.width / 2)) - (tooltipRect.width / 2))+ "px";
             }
         });
@@ -1669,7 +1668,7 @@ CanopyEnhancer.prototype.MACLookUp = function(block) {
  */
 CanopyEnhancer.prototype.addMACLookUpListener = function(querySelector) {
     querySelector = typeof querySelector !== 'undefined' ? querySelector : 'body';
-    var _this = this;
+    let _this = this;
 
     document.querySelector(querySelector).addEventListener('mouseover', function(event) {
         _this.MACLookUp(event.target);
@@ -1720,9 +1719,9 @@ CanopyEnhancer.prototype.MacLookupPage = function() {
  * @constructor
  */
 CanopyEnhancer.prototype.IPLookUp = function(block) {
-    var _this = this;
-    var blockRect = block.getBoundingClientRect();
-    var ip = block.textContent.trimBlank();
+    let _this = this;
+    let blockRect = block.getBoundingClientRect();
+    let ip = block.textContent.trimBlank();
     block.classList.add('cge-highlight');
     if (ip.isValidPubIP()) {
         var request = new XMLHttpRequest();
@@ -1871,15 +1870,15 @@ CanopyEnhancer.prototype.APThroughputCalc = function() {
                 '<th class="table-sortable:numeric table-sortable" title="Click to sort">data usage</th>'
             );
 
-            for(var i = 0; i <  rows.length; i++) {
-                var LUID = parseInt(rows[i].querySelector('td:nth-child(2)').textContent);
+            for(let i = 0; i <  rows.length; i++) {
+                let LUID = parseInt(rows[i].querySelector('td:nth-child(2)').textContent);
                 if (LUID < 255) {
-                    var InTraffic, OutTraffic, InPPS, OutPPS;
-                    var currInOctets = intval(rows[i].querySelector('td:nth-child(3)').textContent);
-                    var currOutOctets = intval(rows[i].querySelector('td:nth-child(8)').textContent);
+                    let InTraffic, OutTraffic, InPPS, OutPPS;
+                    let currInOctets = intval(rows[i].querySelector('td:nth-child(3)').textContent);
+                    let currOutOctets = intval(rows[i].querySelector('td:nth-child(8)').textContent);
 
-                    var currInPackets = intval(rows[i].querySelector('td:nth-child(4)').textContent);
-                    var currOutPackets = intval(rows[i].querySelector('td:nth-child(9)').textContent);
+                    let currInPackets = intval(rows[i].querySelector('td:nth-child(4)').textContent);
+                    let currOutPackets = intval(rows[i].querySelector('td:nth-child(9)').textContent);
 
                     if (this.APThroughputSM[LUID] !== undefined) {
                         /*
