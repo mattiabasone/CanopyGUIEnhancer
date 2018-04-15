@@ -1,3 +1,12 @@
+## Version 1.8.15
+
+Changes:
+* Merged all js in cge.js
+
+Bugfixes:
+* SetUpAJAX() duplicated interval
+* Chart.js loading issue
+
 ## Version 1.8.14
 
 Bugfixes:
