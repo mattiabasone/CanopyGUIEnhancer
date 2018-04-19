@@ -1319,21 +1319,18 @@ CanopyEnhancer.prototype.removeSoundingHeaders = function(text) {
  */
 CanopyEnhancer.prototype.renderSoundingStats = function() {
     let _this = this;
+    let soundingTable = '';
     let soundingStatsBlock = document.getElementById('SectionSoundingStatistics');
     let soundingStatsLog = document.getElementById('SoundingStatsLog');
     let soundingStatsTable = document.querySelector('#SectionSoundingStatistics table.section');
 
     if (soundingStatsLog) {
-
         // create an observer instance
         this.medusaObserver = new MutationObserver(function (mutations) {
             if (mutations && mutations.length > 0) {
-
                 let rawLog = soundingStatsLog.innerHTML;
                 let tbodyImprovedTable = document.getElementById('cge-sounding-tbody');
                 if (!tbodyImprovedTable) {
-                    // Create the table
-                    let soundingTable = '';
                     soundingTable += '<table class="table section">';
                     soundingTable += '<thead>';
                     soundingTable += '<tr>';
@@ -1391,9 +1388,7 @@ CanopyEnhancer.prototype.renderSoundingStats = function() {
                         soundingTbody += '</tr>';
                     }
                 }
-
                 tbodyImprovedTable.insertAdjacentHTML('afterbegin', soundingTbody);
-
             }
         });
 
@@ -1770,7 +1765,7 @@ CanopyEnhancer.prototype.IPLookUp = function(block) {
  */
 CanopyEnhancer.prototype.addIPLookUpListener = function(querySelector) {
     querySelector = typeof querySelector !== 'undefined' ? querySelector : 'body';
-    var _this = this;
+    let _this = this;
 
     document.querySelector(querySelector).addEventListener('mouseover', function(event) {
         _this.IPLookUp(event.target);
@@ -2358,13 +2353,13 @@ CanopyEnhancer.prototype.sessionStatus = function() {
     if (this.isSessionStatusPage()) {
         let span, frag;
         let allModulationCells = document.querySelectorAll('#luidlisttable_3 tr td:nth-child(3)');
-        for (var i = 0;i < allModulationCells.length;i++) {
+        for (let i = 0;i < allModulationCells.length;i++) {
             let matchAllModulations = allModulationCells[i].innerHTML.match(/VC\s{1,2}(?:[\d]{1,3})\sRate\s(?:\d)X\/(\d)X\s((?:MIMO|SISO)\-?(?:[A-B]))/igm);
             if (matchAllModulations) {
 
                 frag = document.createDocumentFragment();
 
-                for (var j = 0; j < matchAllModulations.length; j++) {
+                for (let j = 0; j < matchAllModulations.length; j++) {
                     if (j > 0) {
                         frag.appendChild(document.createElement('br'));
                     }
@@ -2389,5 +2384,6 @@ if (typeof DataVCStatOnload === 'undefined') {
     function DataVCStatOnload(){}
 }
 
+console.log("BUILD1235");
 var CGE = new CanopyEnhancer();
 CGE.initialize();
