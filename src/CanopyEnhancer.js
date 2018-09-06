@@ -2384,6 +2384,5 @@ if (typeof DataVCStatOnload === 'undefined') {
     function DataVCStatOnload(){}
 }
 
-console.log("BUILD1235");
 var CGE = new CanopyEnhancer();
 CGE.initialize();
