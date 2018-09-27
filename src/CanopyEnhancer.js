@@ -2102,19 +2102,31 @@ CanopyEnhancer.prototype.dataVCCalc = function() {
                 '<th class="table-sortable:numeric table-sortable" title="Click to sort">data usage</th>'
             );
 
-            for(var i = 0; i <  rows.length; i++) {
-                let LUID, VCType;
-                if (rows[i].querySelector('td:nth-child(1)').textContent.length === 3) {
-                    LUID = intval(rows[i].querySelector('td:nth-child(1)').textContent);
-                    VCType = 'high';
-                } else {
-                    LUID = intval(rows[i].querySelector('td:nth-child(2)').textContent)
-                    var htmlSMName = rows[i].querySelector('td:nth-child(1)').innerHTML;
-                    htmlSMName = htmlSMName.replace(/\s\-\sLUID\:/, '<br />LUID:');
-                    rows[i].querySelector('td:nth-child(1)').emptyElement();
-                    rows[i].querySelector('td:nth-child(1)').insertAdjacentHTML('afterbegin', htmlSMName);
-                    rows[i].querySelector('td:nth-child(1)').style.minWidth = '200px';
-                    rows[i].querySelector('td:nth-child(1)').style.textAlign = 'left';
+            for (var i = 0; i <  rows.length; i++) {
+                let LUID, LUIDKey, VCType;
+                let htmlSMName = rows[i].querySelector('td:nth-child(1)').innerHTML;
+
+                if (htmlSMName.match(/\s\-\sLUID\:/) !== null) {
+                    if (rows[i].querySelector('td:nth-child(1)').textContent.length === 3) {
+                        LUID = intval(rows[i].querySelector('td:nth-child(1)').textContent);
+                        VCType = 'high';
+                    } else {
+                        LUID = intval(rows[i].querySelector('td:nth-child(2)').textContent);
+
+                        htmlSMName = htmlSMName.replace(/\s\-\sLUID\:/, '<br />LUID:');
+                        rows[i].querySelector('td:nth-child(1)').emptyElement();
+                        rows[i].querySelector('td:nth-child(1)').insertAdjacentHTML('afterbegin', htmlSMName);
+                        rows[i].querySelector('td:nth-child(1)').style.minWidth = '200px';
+                        rows[i].querySelector('td:nth-child(1)').style.textAlign = 'left';
+                        VCType = 'low';
+                    }
+                    LUIDKey = LUID;
+                }  else {
+                    // We must define LUIDKey this way because High and Low priority channel of the same radio (SM)
+                    // have the same integer id (from 15.2)
+                    LUIDKey = rows[i].querySelector('td:nth-child(2)').textContent+'_'+rows[i].querySelector('td:nth-child(3)').textContent;
+                    LUID = intval(rows[i].querySelector('td:nth-child(2)').textContent);
+                    // Forcing "low" template, now High and Low priority has the same cells
                     VCType = 'low';
                 }
 
@@ -2128,42 +2140,42 @@ CanopyEnhancer.prototype.dataVCCalc = function() {
                     let currOutUPackets = intval(rows[i].querySelector('td:nth-child('+tableConfig[VCType].currOutUPackets+')').textContent);
                     let currOutNuPackets = intval(rows[i].querySelector('td:nth-child('+tableConfig[VCType].currOutNuPackets+')').textContent);
 
-                    if (this.APThroughputSM[LUID] !== undefined) {
+                    if (this.APThroughputSM[LUIDKey] !== undefined) {
                         /*
                          * IN
                          */
                         // traffic
-                        InTraffic = this.calcPerSeconds(currInOctets, this.APThroughputSM[LUID].prevInOctets);
-                        this.APThroughputSM[LUID].prevInOctets = currInOctets;
+                        InTraffic = this.calcPerSeconds(currInOctets, this.APThroughputSM[LUIDKey].prevInOctets);
+                        this.APThroughputSM[LUIDKey].prevInOctets = currInOctets;
 
                         // Unicast packets
-                        InUPPS = this.calcPerSeconds(currInUPackets, this.APThroughputSM[LUID].prevInUPackets);
+                        InUPPS = this.calcPerSeconds(currInUPackets, this.APThroughputSM[LUIDKey].prevInUPackets);
                         InUPPS = Math.round(InUPPS);
-                        this.APThroughputSM[LUID].prevInUPackets = currInUPackets;
+                        this.APThroughputSM[LUIDKey].prevInUPackets = currInUPackets;
                         // Non Unicast packets
-                        InNuPPS = this.calcPerSeconds(currInNuPackets, this.APThroughputSM[LUID].prevInNuPackets);
+                        InNuPPS = this.calcPerSeconds(currInNuPackets, this.APThroughputSM[LUIDKey].prevInNuPackets);
                         InNuPPS = Math.round(InNuPPS);
-                        this.APThroughputSM[LUID].prevInNuPackets = currInNuPackets;
+                        this.APThroughputSM[LUIDKey].prevInNuPackets = currInNuPackets;
 
                         /*
                          * OUT
                          */
                         // traffic
-                        OutTraffic = this.calcPerSeconds(currOutOctets, this.APThroughputSM[LUID].prevOutOctets);
-                        this.APThroughputSM[LUID].prevOutOctets = currOutOctets;
+                        OutTraffic = this.calcPerSeconds(currOutOctets, this.APThroughputSM[LUIDKey].prevOutOctets);
+                        this.APThroughputSM[LUIDKey].prevOutOctets = currOutOctets;
 
                         // packets
-                        OutUPPS = this.calcPerSeconds(currOutUPackets, this.APThroughputSM[LUID].prevOutUPackets);
+                        OutUPPS = this.calcPerSeconds(currOutUPackets, this.APThroughputSM[LUIDKey].prevOutUPackets);
                         OutUPPS = Math.round(OutUPPS);
-                        this.APThroughputSM[LUID].prevOutUPackets = currOutUPackets;
+                        this.APThroughputSM[LUIDKey].prevOutUPackets = currOutUPackets;
 
                         // packets
-                        OutNuPPS = this.calcPerSeconds(currOutNuPackets, this.APThroughputSM[LUID].prevOutNuPackets);
+                        OutNuPPS = this.calcPerSeconds(currOutNuPackets, this.APThroughputSM[LUIDKey].prevOutNuPackets);
                         OutNuPPS = Math.round(OutNuPPS);
-                        this.APThroughputSM[LUID].prevOutNuPackets = currOutNuPackets;
+                        this.APThroughputSM[LUIDKey].prevOutNuPackets = currOutNuPackets;
 
                     } else {
-                        this.APThroughputSM[LUID] = {
+                        this.APThroughputSM[LUIDKey] = {
                             prevInOctets: currInOctets,
                             prevInUPackets: currInUPackets,
                             prevInNuPackets: currInNuPackets,
@@ -2187,7 +2199,7 @@ CanopyEnhancer.prototype.dataVCCalc = function() {
                     // Outbound
                     rows[i].querySelector('td:nth-child('+tableConfig[VCType].currOutNuPackets+')').insertAdjacentHTML(
                         'afterend',
-                        '<td class="cge-highlight">'+this.APThroughputSM[LUID].prevOutOctets.formatDataUsage()+'</td>'
+                        '<td class="cge-highlight">'+this.APThroughputSM[LUIDKey].prevOutOctets.formatDataUsage()+'</td>'
                     );
                     rows[i].querySelector('td:nth-child('+tableConfig[VCType].currOutNuPackets+')').insertAdjacentHTML(
                         'beforeend',
@@ -2205,7 +2217,7 @@ CanopyEnhancer.prototype.dataVCCalc = function() {
                     // Inbound
                     rows[i].querySelector('td:nth-child('+tableConfig[VCType].currInNuPackets+')').insertAdjacentHTML(
                         'afterend',
-                        '<td class="cge-highlight">'+this.APThroughputSM[LUID].prevInOctets.formatDataUsage()+'</td>'
+                        '<td class="cge-highlight">'+this.APThroughputSM[LUIDKey].prevInOctets.formatDataUsage()+'</td>'
                     );
                     rows[i].querySelector('td:nth-child('+tableConfig[VCType].currInNuPackets+')').insertAdjacentHTML(
                         'beforeend',
