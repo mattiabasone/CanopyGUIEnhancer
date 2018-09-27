@@ -1,3 +1,8 @@
+## Version 1.8.16
+
+Bugfixes:
+* Negative numbers in DataVC Page
+
 ## Version 1.8.15
 
 Changes:

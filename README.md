@@ -55,6 +55,7 @@ The extension has been tested on the following software versions, with old versi
 * [Bugfix] Event log does not show last entry
 * [Bugfix] 13.4.1 PMP100 Data VC page rendering
 * [Bugfix] Chart.js loading issue
+* [Bugfix] Negative numbers in DataVC Page
 
 ### Version 1.7
 
