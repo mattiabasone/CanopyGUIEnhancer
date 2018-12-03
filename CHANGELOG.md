@@ -1,3 +1,8 @@
+## Version 1.8.17
+
+Bugfixes:
+* Added new CambiumNetworks code in CGESetupAjax for real time alignment graph
+
 ## Version 1.8.16
 
 Bugfixes:

@@ -4,8 +4,8 @@
   "name": "Canopy GUI Enhancer",
   "short_name": "CGE",
   "description": "Enhance the standard CambiumNetworks Canopy Web GUI",
-  "version": "1.8.16",
-  "version_name": "1.8.16",
+  "version": "1.8.17",
+  "version_name": "1.8.17",
   "author": "Mattia Basone <mattia.basone@gmail.com>",
 
   "browser_action": {
