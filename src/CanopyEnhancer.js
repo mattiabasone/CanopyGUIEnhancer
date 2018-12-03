@@ -157,7 +157,8 @@ var CanopyEnhancer = function() {
     this.Sections[3] = {
         name: "Tool",
         pages:{
-            4: "AP Evaluation"
+            4: "AP Evaluation",
+            6: "Alignment Tool"
         }
     };
 
@@ -449,14 +450,24 @@ CanopyEnhancer.prototype.getSiteNameTitle = function() {
  * Get WebPage Auto Update setting
  */
 CanopyEnhancer.prototype.getRefreshTime = function() {
-    var bodyOnload = document.getElementsByTagName('body')[0].getAttribute('onload');
-    var match = bodyOnload.match(/handleLoad\(([0-9]+)\,.*/);
-    if (match[1]) {
-        this.refreshTime = match[1];
+    let bodyOnload = document.getElementsByTagName('body')[0].getAttribute('onload');
+    // Trying to detect refresh time from handleLoad Cambium function
+    let match = bodyOnload.match(/handleLoad\(([0-9]+)\,.*/);
+    if (match && match[1]) {
+        this.refreshTime = parseInt(match[1]);
         this.intervalsTimeout = (this.refreshTime * 1000) + 1;
-    } else {
-        this.refreshTime = 0;
+        return;
     }
+
+    // Ok, in 15.2+ the body has the function handleLoadMilli in some sections (thank you Cambium!)
+    match = bodyOnload.match(/handleLoadMilli\(([0-9]+)\,.*/);
+    if (match && match[1]) {
+        this.refreshTime = parseInt(match[1]) / 1000;
+        this.intervalsTimeout = (this.refreshTime * 1000) + 1;
+        return;
+    }
+
+    this.refreshTime = 0;
 };
 
 /**
@@ -514,6 +525,72 @@ CanopyEnhancer.prototype.SetUpAJAX = function() {
                             let vars = request.responseXML.getElementsByTagName('var');
                             for (let i = 0; i < vars.length; i++) {
                                 let id = vars[i].getAttribute('id');
+
+                                // START - New code for RF Power Level Graph
+                                if (id.indexOf("PowerLevelOFDMMax") >= 0) {
+                                    max_rssi = vars[i].firstChild.nodeValue.substr(0, vars[i].firstChild.nodeValue.indexOf(' '));
+                                }
+                                if (id.indexOf("PowerLevelOFDMCurrent") >= 0) {
+                                    var value = vars[i].firstChild.nodeValue.substr(0, vars[i].firstChild.nodeValue.indexOf(' '));
+                                    if (((document.getElementsByTagName("title")[0].innerHTML).indexOf("Alignment Tool") > -1) && (typeof(d3 == "object"))) {
+                                        var bv = [];
+                                        var ms = new Date().getTime() / 1000;
+                                        bv[0] = {
+                                            CurrentTimeStamp: ms,
+                                            ReceivePower: value
+                                        };
+                                        var e = {
+                                            boardValue: bv
+                                        };
+                                        DS.updateItem("rssi_chart", e);
+                                        if (Number(value) > Number(max_rssi)) {
+                                            DS.getItem("rssi_chart").setMax(value);
+                                        } else if (DS.getItem("rssi_chart").maxLine == undefined) {
+                                            DS.getItem("rssi_chart").setMax(max_rssi);
+                                        }
+                                        var a, b, c, d = {
+                                            value: "",
+                                            options: clone(rssi_chart.data)
+                                        };
+                                        a = DS.getItem("rssi_chart");
+                                        b = a.getVal();
+                                        (c = DataStorageItem.mapValue(b, a.getValues(rssi_chart))) ? (c.options = jsExtend(d.options, c.options), d = c) : d.value = b;
+                                        d.validity = a.getValidity();
+                                        a = d;
+                                        var c = rssi_chart.data.marg[rssi_chart.data.subtype] || rssi_chart.data.marg.line;
+                                        var b = a.value.chartData;
+                                        this.opts = a;
+                                        if (b[0] && (b[0].list.length > 1)) {
+                                            if (!initialised) {
+                                                var parent = document.getElementById("SectionGraph");
+                                                var dia_div = document.createElement('div');
+                                                dia_div.id = 'diagram_max_rssi';
+                                                dia_div.class = 'diagram_wrapper';
+                                                flat_d = $(dia_div).flatGraph();
+                                                parent.appendChild(flat_d[0]);
+                                                var parent = document.getElementById("SectionGraph");
+                                                var div = document.createElement('div');
+                                                div.id = 'rssi_chart_wrap';
+                                                div.style = 'min-height: 270px;'
+                                                parent.appendChild(div);
+                                                rssi_chart.initialized = !1;
+                                                rssi_chart.wrapperId = "rssi_chart_wrap";
+                                                rssi_chart.data.chart = window.SimpleChart();
+                                                rssi_chart.data.chart(rssi_chart.data.subtype, "#" + rssi_chart.wrapperId);
+                                                rssi_chart.data.chart.margin(c).duration(0).xRule(!0).yRule(!0).background("#000").height(a.options.height - c.top - c.bottom).width($(document.getElementById("rssi_chart_wrap")).width() - c.left - c.right);
+                                                "acs" !== rssi_chart.data.subtype ? (rssi_chart.data.chart.data(b), void 0 !== a.options.minMaxYValuesCoef && rssi_chart.data.chart.minMaxYValuesCoef(a.options.minMaxYValuesCoef), void 0 !== a.options.adjustTimeAutoScale && rssi_chart.data.chart.adjustTimeAutoScale(a.options.adjustTimeAutoScale), void 0 !== a.options.minimumYRange && rssi_chart.data.chart.minimumYRange(a.options.minimumYRange), rssi_chart.data.chart.xScale("time")) : rssi_chart.data.chart.xScale("ordinal");
+                                                rssi_chart.data.chart.yScale("linear");
+                                                initialised = 1;
+                                            }
+                                            b[0] && ("acs" === rssi_chart.data.subtype && rssi_chart.data.chart.data(a.value.chartData), a.value.maxLine && rssi_chart.data.chart.setMax(a.value.maxLine), rssi_chart.data.chart.generate())
+                                        }
+                                        if (initialised) {
+                                            flat_d.flatGraph("setDiagramValue", value);
+                                        }
+                                    }
+                                }
+                                // END - New code for RF Power Level Graph
+
                                 if (id !== RebootClass) {
                                     let htmlCode = '';
                                     if (vars[i].hasChildNodes())
