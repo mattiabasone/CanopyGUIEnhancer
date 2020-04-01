@@ -1773,8 +1773,9 @@ CanopyEnhancer.prototype.MACLookupTooltip = function() {
  */
 CanopyEnhancer.prototype.MacLookupPage = function() {
     if ((this.currentCatIndex === 2 &&
-        (this.currentPageIndex === 20 || this.currentPageIndex === 5 || this.currentPageIndex === 21)) &&
-        (this.settings.cge_mac_lookup === 1)) {
+        (this.currentPageIndex === 20 || this.currentPageIndex === 5 || this.currentPageIndex === 21 || this.currentPageIndex === 22)) &&
+        (this.settings.cge_mac_lookup === 1)
+    ) {
         this.MACLookupTooltip();
         this.addMACLookUpListener('#page');
     }

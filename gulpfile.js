@@ -2,7 +2,7 @@ let gulp = require('gulp');
 let uglify = require('gulp-uglify-es').default;
 let concat = require('gulp-concat');
 
-gulp.task('compile', function() {
+gulp.task('compile', async function() {
     gulp.src([
         './src/lib/Chart.min.js',
         './src/utils.js',
