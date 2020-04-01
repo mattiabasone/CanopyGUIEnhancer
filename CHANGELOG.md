@@ -1,3 +1,7 @@
+## Version 1.8.18
+Bugfixes:
+* Fixes MAC lookup not working on 16.1 ARP tab
+
 ## Version 1.8.17
 
 Bugfixes:
