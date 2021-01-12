@@ -1,3 +1,7 @@
+## Version 1.8.19
+Bugfixes:
+* Fixes MAC lookup not working on ARP tab with firmware version >= 20.x
+
 ## Version 1.8.18
 Bugfixes:
 * Fixes MAC lookup not working on 16.1 ARP tab

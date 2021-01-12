@@ -57,6 +57,7 @@ The extension has been tested on the following software versions, with old versi
 * [Bugfix] Chart.js loading issue
 * [Bugfix] Negative numbers in DataVC Page
 * [Bugfix] Fixes MAC lookup not working on 16.1 ARP tab
+* [Bugfix] Fixes MAC lookup not working on ARP tab with firmware version >= 20.x
 
 ### Version 1.7
 

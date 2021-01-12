@@ -1772,8 +1772,8 @@ CanopyEnhancer.prototype.MACLookupTooltip = function() {
  * ARP Page processing
  */
 CanopyEnhancer.prototype.MacLookupPage = function() {
-    if ((this.currentCatIndex === 2 &&
-        (this.currentPageIndex === 20 || this.currentPageIndex === 5 || this.currentPageIndex === 21 || this.currentPageIndex === 22)) &&
+    let lookupPageIndex = [5, 20, 21, 22, 24];
+    if ((this.currentCatIndex === 2 && lookupPageIndex.includes(this.currentPageIndex)) &&
         (this.settings.cge_mac_lookup === 1)
     ) {
         this.MACLookupTooltip();
