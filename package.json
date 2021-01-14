@@ -1,0 +1,21 @@
+{
+  "name": "canopy-gui-enhancer",
+  "version": "1.8.19",
+  "description": "Canopy GUI Enhancer - Browser Extension",
+  "main": "cge.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mattiabasone/CanopyGUIEnhancer.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mattiabasone/CanopyGUIEnhancer/issues"
+  },
+  "homepage": "https://github.com/mattiabasone/CanopyGUIEnhancer#readme",
+  "dependencies": {
+    "gulp": "^4.0.2",
+    "gulp-concat": "^2.6.1",
+    "gulp-uglify-es": "^2.0.0"
+  }
+}

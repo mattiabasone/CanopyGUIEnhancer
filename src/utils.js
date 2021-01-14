@@ -26,7 +26,7 @@ Number.prototype.byte2Mbit = function() {
  * @returns {*}
  */
 Number.prototype.formatDataUsage = function() {
-    var num;
+    let num;
     if (this >= 1000000000000) {
         num = Math.round(this / 1099511627776);
         num = num + 'TB';
@@ -69,12 +69,8 @@ String.prototype.trimBlank = function() {
  * @returns {boolean}
  */
 String.prototype.isMAC = function() {
-    var res = this.match(/^(([0-9A-Fa-f]{2}[:-]?){5}([0-9A-Fa-f]{2}))$/);
-    if (res !== null) {
-        return true;
-    } else {
-        return false;
-    }
+    let res = this.match(/^(([0-9A-Fa-f]{2}[:-]?){5}([0-9A-Fa-f]{2}))$/);
+    return res !== null;
 };
 
 /**
@@ -83,9 +79,9 @@ String.prototype.isMAC = function() {
  * @returns {boolean}
  */
 String.prototype.isValidPubIP = function() {
-    var match1 = this.match(/^((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$/);
+    let match1 = this.match(/^((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$/);
     if (match1 != null) {
-        var match2 = this.match(/((^127\.)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^192\.168\.))/);
+        let match2 = this.match(/((^127\.)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^192\.168\.))/);
         if (match2 == null) {
             return true;
         }
@@ -118,7 +114,7 @@ Date.prototype.leadingZero = function() {
  * @returns {Number}
  */
 String.prototype.regexIndexOf = function(regex, startpos) {
-    var indexOf = this.substring(startpos || 0).search(regex);
+    let indexOf = this.substring(startpos || 0).search(regex);
     return (indexOf >= 0) ? (indexOf + (startpos || 0)) : indexOf;
 };
 
@@ -136,9 +132,9 @@ String.prototype.regexLastIndexOf = function(regex, startpos) {
     } else if(startpos < 0) {
         startpos = 0;
     }
-    var stringToWorkWith = this.substring(0, startpos + 1);
-    var lastIndexOf = -1;
-    var nextStop = 0;
+    let stringToWorkWith = this.substring(0, startpos + 1);
+    let lastIndexOf = -1;
+    let nextStop = 0;
     while((result = regex.exec(stringToWorkWith)) != null) {
         lastIndexOf = result.index;
         regex.lastIndex = ++nextStop;
@@ -167,14 +163,14 @@ function intval(number) {
  * @param callback
  */
 function jsonp(url, callback) {
-    var callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+    let callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
     window[callbackName] = function(data) {
         delete window[callbackName];
         document.body.removeChild(script);
         callback(data);
     };
 
-    var script = document.createElement('script');
+    let script = document.createElement('script');
     script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
     document.body.appendChild(script);
 }
@@ -194,30 +190,6 @@ function escapeHTML(str) {
         .replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/**
- * Load JS script Async
- * @param path
- */
-function loadJS(path) {
-    var newBlock = document.createElement("script");
-    newBlock.src = path;
-    newBlock.async = true;
-    newBlock.type = "text/javascript";
-    document.getElementsByTagName("body")[0].appendChild(newBlock);
-}
-
-/**
- * Load CSS Async
- * @param path
- */
-function loadCSS(path) {
-    var newBlock = document.createElement("link");
-    newBlock.href = path;
-    newBlock.rel = "stylesheet";
-    newBlock.type = "text/css";
-    document.getElementsByTagName("head")[0].appendChild(newBlock);
-}
-
 
 function highlightErrorsInText(searchText, text) {
     var returnText;
@@ -225,10 +197,6 @@ function highlightErrorsInText(searchText, text) {
     returnText = text.replace(tmpRegExp,"<span class='cge-bad-power-level'>$1</span>");
     return returnText;
 }
-
-/**
- * JS Extension
- */
 
 /**
  * Empty element content
