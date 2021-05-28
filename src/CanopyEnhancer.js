@@ -1045,39 +1045,25 @@ CanopyEnhancer.prototype.realTimeTraffic = function() {
                     i--;
                 }
 
-                var trDataSetColors, scaleGridLineColor;
+                let trDataSetColors;
                 switch (this.settings.cge_theme) {
                     case 'dark':
-                        scaleGridLineColor = "rgba(200,200,200,.05)";
                         trDataSetColors = {
-                            'trIn': {
-                                fillColor: "rgba(138, 118, 170, 0.2)",
-                                strokeColor: "rgba(138, 118, 170, 1)",
-                                pointColor: "rgba(138, 118, 170, 0.2)",
-                                pointHighlightStroke: "rgba(138, 118, 170, 1)"
+                            trIn: {
+                                borderColor: "rgba(138, 118, 170, 1)",
                             },
-                            'trOut': {
-                                fillColor: "rgba(35, 216, 127, 0.2)",
-                                strokeColor: "rgba(35, 216, 127, 1)",
-                                pointColor: "rgba(35, 216, 127, 1)",
-                                pointHighlightStroke: "rgba(35, 216, 127, 1)"
+                            trOut: {
+                                borderColor: "rgba(35, 216, 127, 1)",
                             }
                         };
                         break;
                     default:
-                        scaleGridLineColor = "rgba(0,0,0,.05)";
                         trDataSetColors = {
                             'trIn': {
-                                fillColor: "rgba(88,88,88,0.2)",
-                                strokeColor: "rgba(88,88,88,1)",
-                                pointColor: "rgba(88,88,88,0.2)",
-                                pointHighlightStroke: "rgba(88,88,88,1)"
+                                borderColor: "rgba(88,88,88,1)",
                             },
                             'trOut': {
-                                fillColor: "rgba(50,143,191,0.2)",
-                                strokeColor: "rgba(50,143,191,1)",
-                                pointColor: "rgba(50,143,191,1)",
-                                pointHighlightStroke: "rgba(50,143,191,1)"
+                                borderColor: "rgba(50,143,191,1)",
                             }
                         };
                         break;
@@ -1088,85 +1074,52 @@ CanopyEnhancer.prototype.realTimeTraffic = function() {
                     datasets: [
                         {
                             label: "Interface Traffic In",
-                            fillColor: trDataSetColors.trIn.fillColor,
-                            strokeColor: trDataSetColors.trIn.strokeColor,
-                            pointColor: trDataSetColors.trIn.pointColor,
-                            pointStrokeColor: "#fff",
-                            pointHighlightFill: "#fff",
-                            pointHighlightStroke: trDataSetColors.trIn.pointHighlightStroke,
-                            data: [0, 0, 0, 0, 0]
+                            data: [0, 0, 0, 0, 0],
+                            fill: false,
+                            borderColor: trDataSetColors.trIn.borderColor,
+                            tension: 0.4
                         },
                         {
                             label: "Interface Traffic Out",
-                            fillColor: trDataSetColors.trOut.fillColor,
-                            strokeColor: trDataSetColors.trOut.strokeColor,
-                            pointColor: trDataSetColors.trOut.pointColor,
-                            pointStrokeColor: "#fff",
-                            pointHighlightFill: "#fff",
-                            pointHighlightStroke: trDataSetColors.trOut.pointHighlightStroke,
-                            data: [0, 0, 0, 0, 0]
+                            data: [0, 0, 0, 0, 0],
+                            fill: false,
+                            borderColor: trDataSetColors.trOut.borderColor,
+                            tension: 0.4
                         }
                     ]
                 };
 
                 let chartOpt = {
-
-                    animation: true,
-                    animationSteps: 20,
-                    scaleBeginAtZero: true,
-                    responsive: true,
-
-                    ///Boolean - Whether grid lines are shown across the chart
-                    scaleShowGridLines : true,
-
-                    //String - Colour of the grid lines
-                    scaleGridLineColor : scaleGridLineColor,
-
-                    //Number - Width of the grid lines
-                    scaleGridLineWidth : 1,
-
-                    //Boolean - Whether to show horizontal lines (except X axis)
-                    scaleShowHorizontalLines: true,
-
-                    //Boolean - Whether to show vertical lines (except Y axis)
-                    scaleShowVerticalLines: true,
-
-                    //Boolean - Whether the line is curved between points
-                    bezierCurve : true,
-
-                    //Number - Tension of the bezier curve between points
-                    bezierCurveTension : 0.4,
-
-                    //Boolean - Whether to show a dot for each point
-                    pointDot : true,
-
-                    //Number - Radius of each point dot in pixels
-                    pointDotRadius : 4,
-
-                    //Number - Pixel width of point dot stroke
-                    pointDotStrokeWidth : 1,
-
-                    //Number - amount extra to add to the radius to cater for hit detection outside the drawn point
-                    pointHitDetectionRadius : 20,
-
-                    //Boolean - Whether to show a stroke for datasets
-                    datasetStroke : true,
-
-                    //Number - Pixel width of dataset stroke
-                    datasetStrokeWidth : 2,
-
-                    //Boolean - Whether to fill the dataset with a colour
-                    datasetFill : true,
-
-                    //String - A legend template
-                    legendTemplate : "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li><span class=\"cge-graph-legend-entry\" style=\"background-color:<%=datasets[i].strokeColor%>;\"></span><%if(datasets[i].label){%><%=datasets[i].label%><%}%>: <span style=\"color:<%=datasets[i].strokeColor%>\"><span id=\"legend-<%=datasets[i].label.replace(/\\s/g, '')%>\">0.00</span> Mbps</span></li><%}%></ul>"
-
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                generateLabels: function (chart) {
+                                    let { data } = chart;
+                                    return data.datasets.map((ds) => {
+                                        let value = ds.data[ds.data.length - 1];
+                                        return {
+                                            text: `${ds.label}: ${value} Mbps`,
+                                            fillStyle: ds.borderColor,
+                                            strokeStyle: ds.borderColor,
+                                            index: i,
+                                        };
+                                    });
+                                }
+                            }
+                        }
+                    },
                 };
 
-                let ctx = document.getElementById("RTGChart").getContext("2d");
-                this.realTimeTrafficChart = new Chart(ctx).Line(chartData, chartOpt);
+                this.realTimeTrafficChart = new Chart(
+                    document.getElementById('RTGChart'),
+                    {
+                        type: 'line',
+                        data: chartData,
+                        options: chartOpt
+                    }
+                );
                 document.getElementById('RTGLegend').emptyElement();
-                document.getElementById('RTGLegend').insertAdjacentHTML('afterbegin', this.realTimeTrafficChart.generateLegend())
 
             } else {
 
@@ -1270,24 +1223,24 @@ CanopyEnhancer.prototype.updateTrafficData = function (
         this.trafficData.prevInNUcastPkts = currInNUcastPkts;
         this.trafficData.prevOutNUcastPkts = currOutNUcastPkts;
 
-        /*
-         * UPDATE GUI
-         */
         if (this.settings.cge_rtt_type === 'graph') {
             let tmpTime = new Date();
-            let timestring = tmpTime.getHours().leadingZero() + ':'+tmpTime.getMinutes().leadingZero()+':'+tmpTime.getSeconds().leadingZero();
+            let timeString = tmpTime.getHours().leadingZero() + ':'+tmpTime.getMinutes().leadingZero()+':'+tmpTime.getSeconds().leadingZero();
 
-            this.realTimeTrafficChart.addData(
-                [this.trafficData.inTraffic, this.trafficData.outTraffic],
-                timestring
-            );
+            let newData = [this.trafficData.inTraffic, this.trafficData.outTraffic];
+            this.realTimeTrafficChart.data.labels.push(timeString);
+            this.realTimeTrafficChart.data.datasets.forEach((dataset, index) => {
+                dataset.data.push(newData[index]);
+            });
+            this.realTimeTrafficChart.update();
 
-            if (this.realTimeTrafficChart.datasets[0].points.length > this.settings.cge_rtt_graph_entries) {
-                this.realTimeTrafficChart.removeData();
+            if (this.realTimeTrafficChart.data.datasets[0].data.length > this.settings.cge_rtt_graph_entries) {
+                this.realTimeTrafficChart.data.labels.shift();
+                this.realTimeTrafficChart.data.datasets.forEach((dataset) => {
+                    dataset.data.shift();
+                });
+                this.realTimeTrafficChart.update();
             }
-
-            document.getElementById('legend-InterfaceTrafficIn').textContent = this.trafficData.inTraffic.toString();
-            document.getElementById('legend-InterfaceTrafficOut').textContent = this.trafficData.outTraffic.toString();
         } else {
             document.getElementById('cge-CurrInTraffic').textContent = this.trafficData.inTraffic.toString();
             document.getElementById('cge-CurrOutTraffic').textContent = this.trafficData.outTraffic.toString();
