@@ -6,7 +6,7 @@ const PLATFORM_FSK = 'FSK';
  * Canopy GUI Enhancer
  * @constructor
  */
-var CanopyEnhancer = function() {
+const CanopyEnhancer = function() {
     this.browser =  'chrome';
     this.refreshTime = 0;
     this.lastRefresh = 0;
@@ -113,8 +113,9 @@ var CanopyEnhancer = function() {
     this.apEvaluationBlock = document.getElementById('APEval'); // #APEval
     this.APEvaluationObj = [];
     this.apSelectionMethod = "";
-    this.currentEvaluatinEntry = -1;
+    this.currentEvaluationEntry = -1;
     this.currentSessionStatus = "";
+    this.currentColorCode = "";
     this.currentlyScanning = "";
 
     /*
@@ -768,13 +769,13 @@ CanopyEnhancer.prototype.getCurrentPageName = function() {
  * @returns {*}
  */
 CanopyEnhancer.prototype.getSignalPowerClass = function(signal) {
-    var cellClass;
+    let cellClass = 'bold ';
     if (signal > -70) {
-        cellClass = 'cge-good-power-level';
+        cellClass += 'cge-good-power-level';
     } else if (signal <= -70 && signal > -80) {
-        cellClass = 'cge-decent-power-level';
+        cellClass += 'cge-decent-power-level';
     } else {
-        cellClass = 'cge-bad-power-level';
+        cellClass += 'cge-bad-power-level';
     }
     return cellClass;
 };
@@ -786,22 +787,22 @@ CanopyEnhancer.prototype.getSignalPowerClass = function(signal) {
  * @returns {*}
  */
 CanopyEnhancer.prototype.getSNRClass = function(v, h) {
-    var cellClass;
+    let cellClass = 'bold ';
 
     v = Number(v);
     h = Number(h);
 
     if (h > 0 && v > 0) {
-        var sumratio = (v + h) / 2;
+        let sumratio = (v + h) / 2;
         if (sumratio > 24) {
-            cellClass = 'cge-good-power-level';
+            cellClass += 'cge-good-power-level';
         } else if (sumratio <= 24 && sumratio > 12) {
-            cellClass = 'cge-decent-power-level';
+            cellClass += 'cge-decent-power-level';
         } else {
-            cellClass = 'cge-bad-power-level';
+            cellClass += 'cge-bad-power-level';
         }
     } else {
-        cellClass = 'cge-bad-power-level';
+        cellClass += 'cge-bad-power-level';
     }
 
     return cellClass;
@@ -870,14 +871,14 @@ CanopyEnhancer.prototype.homePageRender = function () {
 
     if (this.ishomePage()) {
 
-        var linkStatusBlock = null;
+        let linkStatusBlock;
         if (document.getElementById("LinkStatus") !== null) {
             linkStatusBlock = document.getElementById("LinkStatus");
         } else {
             linkStatusBlock = document.getElementById("LinkStatusMain");
         }
 
-        var linkStatus = linkStatusBlock.textContent;
+        let linkStatus = linkStatusBlock.textContent;
         if (linkStatus !== '100Base-TX Full Duplex' && linkStatus !== '1000Base-T Full Duplex') {
 
             var spanEthWarn = document.createElement('span');
@@ -888,74 +889,69 @@ CanopyEnhancer.prototype.homePageRender = function () {
             linkStatusBlock.appendChild(spanEthWarn);
         }
 
-        var distanceBlock = document.getElementById('Distance');
+        let distanceBlock = document.getElementById('Distance');
         if (distanceBlock !== null) {
-            var milesRegex = distanceBlock.textContent.match(/(([0-9]{1,2})\.([0-9]{0,3}))\smiles/);
+            let milesRegex = distanceBlock.textContent.match(/(([0-9]{1,2})\.([0-9]{0,3}))\smiles/);
             if (milesRegex !== null) {
-                var km = parseFloat(milesRegex[1]) * 1.60934;
+                let km = parseFloat(milesRegex[1]) * 1.60934;
                 distanceBlock.appendChild(document.createTextNode(' - ' + km.toFixed(3) + ' kilometres'));
             }
         }
 
-        switch (this.currentRadioModulation) {
-            case 'MIMO_OFDM':
-                var span;
-                var PowerLevelOFDM = document.getElementById('PowerLevelOFDM');
-                if (PowerLevelOFDM !== null) {
-                    var signal = PowerLevelOFDM.textContent;
-                    signal = parseFloat(signal.replace(" dBm", ""));
+        if (this.currentRadioModulation === 'MIMO_OFDM') {
+            let span;
+            let PowerLevelOFDM = document.getElementById('PowerLevelOFDM');
+            if (PowerLevelOFDM !== null) {
+                var signal = PowerLevelOFDM.textContent;
+                signal = parseFloat(signal.replace(" dBm", ""));
 
-                    PowerLevelOFDM.emptyElement();
-                    span = document.createElement('span');
-                    span.className = this.getSignalPowerClass(signal);
-                    span.appendChild(document.createTextNode(signal + ' dBm'));
-                    PowerLevelOFDM.appendChild(span);
+                PowerLevelOFDM.emptyElement();
+                span = document.createElement('span');
+                span.className = this.getSignalPowerClass(signal);
+                span.appendChild(document.createTextNode(signal + ' dBm'));
+                PowerLevelOFDM.appendChild(span);
 
-                }
+            }
+            let SignalToNoiseRatioSM = document.getElementById('SignalToNoiseRatioSM');
+            if (SignalToNoiseRatioSM !== null) {
+                let CSSClass = "";
+                let SNRText = SignalToNoiseRatioSM.textContent;
+                let matchSNR = SNRText.match(/([\d]+)\sV\s\/\s([\d]+)\sH\sdB/);
 
-                var SignalToNoiseRatioSM = document.getElementById('SignalToNoiseRatioSM');
-                if (SignalToNoiseRatioSM !== null) {
-                    var CSSClass = "";
-                    var SNRText = SignalToNoiseRatioSM.textContent;
-                    var matchSNR = SNRText.match(/([\d]+)\sV\s\/\s([\d]+)\sH\sdB/);
-
+                if (matchSNR) {
+                    CSSClass = this.getSNRClass(matchSNR[1], matchSNR[2]);
+                } else {
+                    matchSNR = SNRText.match(/([\d]+)\sdB\sMIMO\-(?:[A-B])/);
                     if (matchSNR) {
-                        CSSClass = this.getSNRClass(matchSNR[1], matchSNR[2]);
-                    } else {
-                        matchSNR = SNRText.match(/([\d]+)\sdB\sMIMO\-(?:[A-B])/);
-                        if (matchSNR) {
-                            CSSClass = this.getSNRClass(matchSNR[1], 0);
-                        }
-                    }
-
-                    if (CSSClass !== "") {
-                        SignalToNoiseRatioSM.emptyElement();
-                        span = document.createElement('span');
-                        span.className = CSSClass;
-                        span.appendChild(document.createTextNode(SNRText));
-                        SignalToNoiseRatioSM.appendChild(span);
-                    }
-
-                }
-
-                var SessionRate = document.getElementById('SesRate');
-                if (SessionRate) {
-                    var match = SessionRate.textContent.match(/VC\s{1,2}(?:[\d]{1,3})\sRate\s(?:\d)X\/(\d)X\s((?:MIMO|SISO)\-?(?:[A-B]))/i);
-                    if (match) {
-                        SessionRate.emptyElement();
-                        span = document.createElement('span');
-                        span.className = this.getAdaptRateClass(match[1], match[2]);
-                        span.appendChild(document.createTextNode(match[0]));
-                        SessionRate.appendChild(span);
+                        CSSClass = this.getSNRClass(matchSNR[1], 0);
                     }
                 }
 
-                break;
+                if (CSSClass !== "") {
+                    SignalToNoiseRatioSM.emptyElement();
+                    span = document.createElement('span');
+                    span.className = CSSClass;
+                    span.appendChild(document.createTextNode(SNRText));
+                    SignalToNoiseRatioSM.appendChild(span);
+                }
+
+            }
+            let SessionRate = document.getElementById('SesRate');
+            if (SessionRate) {
+                let match = SessionRate.textContent.match(/VC\s{1,2}(?:[\d]{1,3})\sRate\s(?:\d)X\/(\d)X\s((?:MIMO|SISO)\-?(?:[A-B]))/i);
+                if (match) {
+                    SessionRate.emptyElement();
+                    span = document.createElement('span');
+                    span.className = this.getAdaptRateClass(match[1], match[2]);
+                    span.appendChild(document.createTextNode(match[0]));
+                    SessionRate.appendChild(span);
+                }
+            }
         }
 
         // Move site info box
-        var content = document.getElementById('SectionSiteInfoStats');
-        var parent = content.parentNode;
+        let content = document.getElementById('SectionSiteInfoStats');
+        let parent = content.parentNode;
         parent.insertBefore(content, document.getElementById('SectionDeviceInfo'));
     }
 };
@@ -1281,8 +1277,8 @@ CanopyEnhancer.prototype.updateTrafficData = function (
  */
 CanopyEnhancer.prototype.highlightInterfaceErrors = function () {
 
-    var errorClassName = "cge-error-text";
-    var errorFields = [];
+    let errorClassName = "cge-error-text";
+    let errorFields = [];
 
     if (this.isEthernetStats()) {
         errorFields = this.ethernetErrorsFields;
@@ -1292,14 +1288,14 @@ CanopyEnhancer.prototype.highlightInterfaceErrors = function () {
 
     if (errorFields.length > 0) {
 
-        for (var i = 0; i < errorFields.length; i++) {
+        for (let i = 0; i < errorFields.length; i++) {
 
-            var el = document.getElementById(errorFields[i]);
+            let el = document.getElementById(errorFields[i]);
             if (!el) {
                 continue;
             }
 
-            var value = Number(el.textContent);
+            let value = Number(el.textContent);
             if (value > 0) {
                 // Add highlight to the counter
                 el.parentNode.parentNode.parentNode.classList.add(errorClassName);
@@ -1457,26 +1453,35 @@ CanopyEnhancer.prototype.extractAPEvaluationData = function() {
     rawAPEval = rawAPEval.replace(/\&nbsp\;/gi, " ");
     let splittedEval = rawAPEval.split("*********************************************");
 
-    splittedEval[0] = splittedEval[0].replace(/([\n]+)/g, " ");
-    splittedEval[0] = splittedEval[0].replace(/([\s]+)/g, " ");
+    let evaluationHeader = splittedEval[0].replace(/([\n]+)/g, " ");
+    evaluationHeader = evaluationHeader.replace(/([\s]+)/g, " ");
+    console.log(evaluationHeader)
 
-    let tmpFirstRowMatch = splittedEval[0].match(/AP Selection Method used\:(.*)\sCurrent entry index\:/);
+    let tmpFirstRowMatch = evaluationHeader.match(/AP Selection Method used\:(.*)\sCurrent entry index\:/);
     if (tmpFirstRowMatch) {
         this.apSelectionMethod = tmpFirstRowMatch[1];
     }
-    tmpFirstRowMatch = splittedEval[0].match(/Current entry index\:\s([0-9]+)\sSession Status\:/);
+    tmpFirstRowMatch = evaluationHeader.match(/Current entry index\:\s([0-9]+)\sSession Status\:/);
     if (tmpFirstRowMatch) {
-        this.currentEvaluatinEntry = tmpFirstRowMatch[1];
+        this.currentEvaluationEntry = tmpFirstRowMatch[1];
     }
-    tmpFirstRowMatch = splittedEval[0].match(/Session Status\:\s([A-Z]+)\s\(/);
+    tmpFirstRowMatch = evaluationHeader.match(/Session Status\:\s([A-Z]+)\s\(/);
     if (tmpFirstRowMatch) {
         this.currentSessionStatus = tmpFirstRowMatch[1];
     }
 
+    if (this.currentSessionStatus === "REGISTERED") {
+        let registeredColorCode = evaluationHeader.match(/\(via ([a-zA-Z]+) Color Code ([0-9]{1,3})\)/)
+        if (registeredColorCode) {
+            this.currentColorCode = registeredColorCode[2]+" ("+registeredColorCode[1]+")";
+        }
+    }
+
     if (this.debugMessages() === true) {
         console.log("AP Selection Method: " + this.apSelectionMethod);
-        console.log("Current eval entry: " + this.currentEvaluatinEntry);
+        console.log("Current eval entry: " + this.currentEvaluationEntry);
         console.log("Session status: " + this.currentSessionStatus);
+        console.log("Color Code: " + this.currentColorCode);
     }
 
     delete(splittedEval[0]);
@@ -1545,10 +1550,13 @@ CanopyEnhancer.prototype.renderBetterEvaluationTemplate = function() {
 
     let evaluationContent = '';
     evaluationContent += "<div class='betterEvaluationHead'> <b>AP Selection Method:</b> "+this.apSelectionMethod+' - ';
-    evaluationContent += ' <b>Current evaluation entry:</b> <a href="#cge-ap-eval-entry-'+this.currentEvaluatinEntry+'">'+this.currentEvaluatinEntry+'</a> - ';
+    evaluationContent += ' <b>Current evaluation entry:</b> <a href="#cge-ap-eval-entry-'+this.currentEvaluationEntry+'">'+this.currentEvaluationEntry+'</a> - ';
     evaluationContent += " <b>Session status:</b> "+this.currentSessionStatus;
     if (this.currentSessionStatus === 'SCANNING') {
         evaluationContent += " - <b>Currently Scanning:</b> "+this.currentlyScanning;
+    }
+    if (this.currentSessionStatus === 'REGISTERED' && this.currentColorCode !== '') {
+        evaluationContent += ' - <b>Color Code</b>: '+this.currentColorCode;
     }
     evaluationContent += "</div><hr /><br />";
 
@@ -1561,7 +1569,7 @@ CanopyEnhancer.prototype.renderBetterEvaluationTemplate = function() {
         let counter = 0;
         evaluationContent += '<div class="cge-ap-evaluation-entry-title">';
         evaluationContent += '<a name="cge-ap-eval-entry-'+currIndex+'"></a>Entry: ' + currIndex;
-        if (currIndex == this.currentEvaluatinEntry) {
+        if (currIndex == this.currentEvaluationEntry) {
             evaluationContent += ' - Current AP';
         }
         evaluationContent += '</div>';
@@ -1578,15 +1586,15 @@ CanopyEnhancer.prototype.renderBetterEvaluationTemplate = function() {
                 case 'Beacon Receive Power Level':
                     let tmpres = evalEntry[prop].match(/\-(([0-9]+)(\.([0-9]))?)/);
                     if (tmpres) {
-                        var tmpsignal = parseFloat(tmpres[1]);
+                        let tmpsignal = parseFloat(tmpres[1]);
                         tmpsignal = -tmpsignal;
-                        var cellClass = '';
+                        let cellClass = 'bold ';
                         if (tmpsignal > -70) {
-                            cellClass = 'cge-good-power-level';
+                            cellClass += 'cge-good-power-level';
                         } else if (tmpsignal <= -70 && tmpsignal > -80) {
-                            cellClass = 'cge-decent-power-level';
+                            cellClass += 'cge-decent-power-level';
                         } else {
-                            cellClass = 'cge-bad-power-level';
+                            cellClass += 'cge-bad-power-level';
                         }
                         evaluationContent += '<td>'+prop+': <span class="'+cellClass+'">'+evalEntry[prop]+'</span></td>';
                     } else {
