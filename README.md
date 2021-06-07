@@ -24,6 +24,11 @@ The extension has been tested on the following software versions, with old versi
 
 ## Changelog
 
+### Version 1.9
+* Upgraded Chart.js
+* Added Color Code in AP Evaluation
+* Minor fixes and improvements
+
 ### Version 1.8
 
 * Added Throughput, PPS and data usage in the Data VC table (AP only)

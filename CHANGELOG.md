@@ -1,3 +1,8 @@
+## Version 1.9.0
+* Upgraded Chart.js
+* Added Color Code in AP Evaluation
+* Minor fixes and improvements
+
 ## Version 1.8.19
 Bugfixes:
 * Fixes MAC lookup not working on ARP tab with firmware version >= 20.x
