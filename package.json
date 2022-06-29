@@ -1,6 +1,6 @@
 {
   "name": "canopy-gui-enhancer",
-  "version": "1.8.19",
+  "version": "1.9.1",
   "description": "Canopy GUI Enhancer - Browser Extension",
   "main": "cge.js",
   "repository": {

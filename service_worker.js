@@ -1,5 +1,5 @@
 chrome.runtime.onInstalled.addListener(function (object) {
-    if (object.reason === 'update') {
+    if (object.reason === 'update' &&  object.previousVersion !== chrome.runtime.getManifest().version) {
         try {
             chrome.notifications.create(
                 null,
@@ -9,9 +9,9 @@ chrome.runtime.onInstalled.addListener(function (object) {
                     title: 'Extension updated!',
                     message: 'Canopy GUI Enhancer has been updated!'
                 }
-            );
+            )
         } catch (error) {
-            // alert(error);
+            console.log(error)
         }
     }
 });
