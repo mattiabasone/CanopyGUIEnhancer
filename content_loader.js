@@ -1,6 +1,6 @@
-function loadExtensionJS(relativePath) {
+function loadExtensionJS(relativePath, hash) {
     let newBlock = document.createElement("script");
-    newBlock.src = chrome.extension.getURL(relativePath);
+    newBlock.src = chrome.runtime.getURL(relativePath);
     newBlock.async = true;
     newBlock.type = "text/javascript";
     document.getElementsByTagName("body")[0].appendChild(newBlock);
@@ -8,7 +8,7 @@ function loadExtensionJS(relativePath) {
 
 function loadExtensionCSS(relativePath) {
     let newBlock = document.createElement("link");
-    newBlock.href = chrome.extension.getURL(relativePath);
+    newBlock.href = chrome.runtime.getURL(relativePath);
     newBlock.rel = "stylesheet";
     newBlock.type = "text/css";
     document.getElementsByTagName("head")[0].appendChild(newBlock);
@@ -47,16 +47,9 @@ chrome.storage.local.get(null, function (data) {
             }
 
             if (settingsObj.cge_enabled === 1) {
-
-                let s = document.createElement('script');
-                s.innerText = "document.CGESettings = '" + JSON.stringify(settingsObj) + "';";
-                s.onload = function () {
-                    this.parentNode.removeChild(this);
-                };
-                (document.head || document.documentElement).appendChild(s);
+                document.body.setAttribute('cge-settings', JSON.stringify(settingsObj))
 
                 loadExtensionCSS('css/style.css');
-
                 if (settingsObj.cge_custom_css === 1) {
                     loadExtensionCSS('css/bootstrap-mini.css');
                     loadExtensionCSS('css/gui.css');
