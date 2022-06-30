@@ -680,7 +680,7 @@ CanopyEnhancer.prototype.getRadioMac = function() {
 CanopyEnhancer.prototype.loadSettings = function() {
     let _this = this;
     try {
-        let settings = JSON.parse(document.CGESettings);
+        let settings = JSON.parse(document.body.getAttribute('cge-settings'));
         for (let key in settings) {
             if (!settings.hasOwnProperty(key)) continue;
             _this.settings[key] = settings[key];
@@ -1455,7 +1455,6 @@ CanopyEnhancer.prototype.extractAPEvaluationData = function() {
 
     let evaluationHeader = splittedEval[0].replace(/([\n]+)/g, " ");
     evaluationHeader = evaluationHeader.replace(/([\s]+)/g, " ");
-    console.log(evaluationHeader)
 
     let tmpFirstRowMatch = evaluationHeader.match(/AP Selection Method used\:(.*)\sCurrent entry index\:/);
     if (tmpFirstRowMatch) {

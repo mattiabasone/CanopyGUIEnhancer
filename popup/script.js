@@ -69,12 +69,9 @@ window.onload = function() {
             }
         }
     });
-
-    // Add version
-
     let version;
-    if (typeof chrome.app !== 'undefined') {
-        version = chrome.app.getDetails().version;
+    if (typeof chrome.runtime !== 'undefined') {
+        version = chrome.runtime.getManifest().version;
     } else {
         version = browser.runtime.getManifest().version;
     }
